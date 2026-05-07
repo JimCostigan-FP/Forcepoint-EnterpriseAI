@@ -1,0 +1,142 @@
+/* Sidebar — vertical nav. Sticky on desktop, off-canvas drawer on ≤720px. */
+
+.sidebar {
+  grid-area: sidebar;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  height: calc(100vh - var(--topbar-h));
+  position: sticky;
+  top: var(--topbar-h);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 20;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-3) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.sidebar-nav::-webkit-scrollbar { width: 6px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+
+.sidebar-group { display: flex; flex-direction: column; gap: 2px; }
+.sidebar-group-label {
+  font-size: var(--fs-11);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: var(--space-2) var(--space-3) var(--space-1);
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 7px var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-13);
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  position: relative;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.sidebar-item:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+.sidebar-item.active {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+[data-theme="dark"] .sidebar-item.active { background: rgba(255, 255, 255, 0.045); }
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--teal-mid);
+}
+.sidebar-item-icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: color var(--dur-1) var(--ease);
+}
+.sidebar-item:hover .sidebar-item-icon { color: var(--text-secondary); }
+.sidebar-item.active .sidebar-item-icon { color: var(--teal-mid); }
+[data-theme="dark"] .sidebar-item.active .sidebar-item-icon { color: var(--teal-light); }
+.sidebar-item-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-item-badge {
+  font-size: var(--fs-11);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+}
+
+/* ── Collapsed state (icons only) ───────────────────────── */
+#root[data-sidebar-open="false"] .sidebar-group-label,
+#root[data-sidebar-open="false"] .sidebar-item-label,
+#root[data-sidebar-open="false"] .sidebar-item-badge {
+  display: none;
+}
+#root[data-sidebar-open="false"] .sidebar-item { justify-content: center; padding: 8px; }
+#root[data-sidebar-open="false"] .sidebar-item.active::before { display: none; }
+#root[data-sidebar-open="false"] .sidebar-item.active {
+  background: var(--tint-teal);
+  color: var(--teal-mid);
+}
+[data-theme="dark"] #root[data-sidebar-open="false"] .sidebar-item.active {
+  background: rgba(93, 202, 165, 0.12);
+  color: var(--teal-light);
+}
+#root[data-sidebar-open="false"] .sidebar-nav { padding: var(--space-4) var(--space-2) var(--space-3); }
+
+/* ── Mobile drawer (≤720px) ─────────────────────────────── */
+@media (max-width: 720px) {
+  .sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    height: calc(100vh - var(--topbar-h));
+    border-right: 1px solid var(--border-default);
+    box-shadow: var(--shadow-xl);
+    transform: translateX(-100%);
+    transition: transform var(--dur-3) var(--ease);
+    z-index: 99;
+  }
+  #root[data-sidebar-open="true"] .sidebar { transform: translateX(0); }
+
+  /* Drawer always shows full labels even if desktop pref was collapsed.
+     The mobile flag is "closed" by default; this only activates when the
+     user explicitly opens the drawer via the topbar brand button. */
+  #root[data-sidebar-open="false"] .sidebar-group-label,
+  #root[data-sidebar-open="false"] .sidebar-item-label,
+  #root[data-sidebar-open="false"] .sidebar-item-badge { display: revert; }
+  #root[data-sidebar-open="false"] .sidebar-item { justify-content: flex-start; padding: 7px var(--space-3); }
+  #root[data-sidebar-open="false"] .sidebar-nav  { padding: var(--space-4) var(--space-3) var(--space-3); }
+}

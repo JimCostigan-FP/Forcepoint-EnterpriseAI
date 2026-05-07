@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import JSZip from 'jszip'
-import { ChevronDown, DownloadIcon, CopyIcon } from './icons.jsx'
+import { ChevronDown, DownloadIcon, CopyIcon } from '../ui/icons.jsx'
+import './skills.css'
 
 const DEFAULT_RESPONSES = [
   'Say: "Hello! Your Claude Skill is working correctly."',

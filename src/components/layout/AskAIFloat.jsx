@@ -1,4 +1,5 @@
-import { SparkleIcon } from './icons.jsx'
+import { SparkleIcon } from '../ui/icons.jsx'
+import './AskAIFloat.css'
 
 export default function AskAIFloat({ onClick }) {
   return (

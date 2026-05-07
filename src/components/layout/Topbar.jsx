@@ -1,4 +1,5 @@
-import { SearchIcon, BellIcon, SunIcon, MoonIcon, ChevronDown } from './icons.jsx'
+import { SearchIcon, BellIcon, SunIcon, MoonIcon, ChevronDown } from '../ui/icons.jsx'
+import './Topbar.css'
 
 export default function Topbar({
   activeLabel, theme, onToggleTheme,

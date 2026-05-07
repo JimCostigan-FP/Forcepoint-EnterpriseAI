@@ -1,0 +1,8 @@
+/* Global stylesheet entry. Order matters:
+   tokens → reset → primitives → shell. Per-component CSS files
+   live next to their JSX and are imported by those components. */
+
+@import './tokens.css';
+@import './reset.css';
+@import './primitives.css';
+@import './shell.css';

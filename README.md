@@ -65,27 +65,63 @@ This project exists to provide a single trusted destination for:
 ```text
 Forcepoint-EnterpriseAI/
 ├── src/
-│   ├── main.jsx                         # React bootstrap
-│   ├── App.jsx                          # Navigation + section routing
-│   ├── data.js                          # Content model for portal sections
-│   ├── api.js                           # Browser API client (direct/proxy modes)
-│   ├── portal.css                       # Global portal styles
+│   ├── main.jsx                         # React bootstrap (also primes layout state pre-paint)
+│   ├── App.jsx                          # Shell: sidebar + topbar + section routing + theme
+│   │
+│   ├── styles/
+│   │   └── portal.css                   # Single design-system stylesheet (tokens + components)
+│   │
+│   ├── data/
+│   │   └── portal.js                    # Content model for all sections (PORTAL_DATA)
+│   │
+│   ├── lib/
+│   │   └── date.js                      # Shared date/time helpers (parse, format, today)
+│   │
+│   ├── content/
+│   │   └── signal/                      # Newsletter HTML imported as ?raw by SignalSection
+│   │
 │   └── components/
-│       ├── Header.jsx / Footer.jsx      # Shared layout
-│       ├── SkillBuilder.jsx             # SKILL.md ZIP tooling
-│       ├── SkillSubmit.jsx              # GitHub submission + PR flow
-│       ├── GoSacBuilder.jsx             # Additional builder workflow
-│       └── sections/                    # Home/Howtos/News/etc. section components
+│       ├── layout/
+│       │   ├── Sidebar.jsx              # Grouped vertical nav
+│       │   ├── Topbar.jsx               # Brand + breadcrumb + search + actions + profile
+│       │   ├── Footer.jsx               # Site footer
+│       │   └── AskAIFloat.jsx           # Floating AI launcher (sole AI entry)
+│       │
+│       ├── ui/
+│       │   └── icons.jsx                # SVG icon set (single source for all icons)
+│       │
+│       ├── skills/
+│       │   ├── SkillBuilder.jsx         # In-browser SKILL.md ZIP authoring tool
+│       │   ├── SkillSubmit.jsx          # Governance pipeline + GitHub PR flow
+│       │   └── GoSacBuilder.jsx         # Bonus live-data skill walkthrough
+│       │
+│       └── sections/
+│           ├── HomeSection.jsx          # Dashboard: hero + stats + pinned + activity + insight
+│           ├── SkillsSection.jsx
+│           ├── PromptsSection.jsx
+│           ├── HowtosSection.jsx
+│           ├── EventsSection.jsx        # Calendar + filter chips + grouped event cards
+│           ├── NewsSection.jsx
+│           ├── AmbassadorSection.jsx
+│           ├── ArchitectureSection.jsx
+│           └── SignalSection.jsx
+│
 ├── api/
-│   └── ask/index.js                     # Azure Function Anthropic proxy
-├── public/                              # Static assets
+│   └── ask/index.js                     # Azure Function — Anthropic proxy
+├── index.html                           # Vite HTML entry (preconnect + theme bootstrap)
 ├── staticwebapp.config.json             # Auth, headers, routing, API runtime
-├── index.html                           # Vite HTML entry
+├── vite.config.js                       # Vite + React plugin config
 ├── package.json                         # Scripts and dependencies
-├── css/                                 # Legacy static assets (older implementation)
-├── js/                                  # Legacy static assets (older implementation)
-└── signal/                              # Additional project content/assets
+├── .env / .env.example                  # VITE_GITHUB_PAT for SkillSubmit (local dev)
+└── README.md
 ```
+
+Conventions:
+
+- **Tokens** (colors, spacing, typography, radii, shadows, motion) live only in `src/styles/portal.css` `:root` and `[data-theme="dark"]`. Never hard-code colors in component rules or JSX inline styles.
+- **Reusable primitives** (`.btn`, `.icon-btn`, `.badge`, `.card`, `.input`, `.field`, `.list-items`, etc.) are defined once in `portal.css` and referenced by every component.
+- **Naming**: `.component-name`, `.component-name-element`, `.component-name.is-state`, `.component-name.tone-x`. Keep flat selectors, max 2 levels of nesting.
+- **No legacy static assets**: the React app is the single implementation. Old `css/` and `js/` directories were removed.
 
 ## Getting Started
 
@@ -135,19 +171,19 @@ npm run dev
 Open [http://localhost:5173](http://localhost:5173) and verify:
 
 - Navigation between all portal sections
-- Content rendering from `src/data.js`
+- Content rendering from `src/data/portal.js`
 - No console errors in the browser
 
 ### 3) Validate assistant mode before testing
 
-In `src/api.js`, decide how assistant calls should run:
+In `src/App.jsx`, decide how the assistant calls should run when wiring up `askAI`/`askQuick`:
 
 - `USE_PROXY: false` for temporary local direct testing
 - `USE_PROXY: true` for proxy-based behavior aligned to production
 
 ### 4) Make and verify content/app changes
 
-- Update content in `src/data.js` and/or section components in `src/components/sections/`
+- Update content in `src/data/portal.js` and/or section components in `src/components/sections/`
 - Re-check impacted pages
 - Validate any skill tooling flow if touched (`SkillBuilder`, `SkillSubmit`)
 
@@ -174,22 +210,27 @@ Confirm the build succeeds without errors.
 
 ### Frontend assistant configuration
 
-`src/api.js` defines client-side behavior:
+The AI assistant is currently a UI stub — `askAI` and `askQuick` in `src/App.jsx` surface a toast.
+To wire a real backend, replace the bodies of those handlers with a call to your endpoint
+(e.g. `POST /api/ask`). The Azure Function at `api/ask/index.js` is already provisioned with
+DLP hooks and an Anthropic proxy implementation; it just needs the client side to call it.
 
-- `USE_PROXY`: whether requests go through `/api/ask`
-- `PROXY_URL`: proxy endpoint path (default `/api/ask`)
-- `API_KEY`: direct Anthropic key (local testing only)
-- `MODEL`: Anthropic model id
-- `MAX_TOKENS`: token limit per request
+Suggested signature:
 
-Recommended practice:
-
-- Local experiments: direct mode can be used temporarily
-- Shared/production: use proxy mode and keep keys server-side only
+```js
+async function askAI(question) {
+  const res = await fetch('/api/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  })
+  // render the response in your assistant surface
+}
+```
 
 ### Skill submission integration
 
-`src/components/SkillSubmit.jsx` uses:
+`src/components/skills/SkillSubmit.jsx` uses:
 
 - `VITE_GITHUB_PAT`
 
@@ -223,7 +264,7 @@ Configure in Azure Function / Static Web Apps settings (prefer Key Vault referen
 
 ## Content Management
 
-Most editorial content is centralized in `src/data.js`, including:
+Most editorial content is centralized in `src/data/portal.js`, including:
 
 - How-tos
 - News
@@ -233,7 +274,7 @@ Most editorial content is centralized in `src/data.js`, including:
 - Ambassador program content
 - Architecture responsibilities and references
 
-To update portal content, edit `src/data.js`, then rebuild and redeploy.
+To update portal content, edit `src/data/portal.js`, then rebuild and redeploy.
 
 ## Ownership and References
 

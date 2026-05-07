@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
-import { PORTAL_DATA } from '../../data.js'
-import SkillSubmit from '../SkillSubmit.jsx'
-import SkillBuilder from '../SkillBuilder.jsx'
-import GoSacBuilder from '../GoSacBuilder.jsx'
-import { PlusIcon } from '../icons.jsx'
+import { PORTAL_DATA } from '../../data/portal.js'
+import SkillSubmit from '../skills/SkillSubmit.jsx'
+import SkillBuilder from '../skills/SkillBuilder.jsx'
+import GoSacBuilder from '../skills/GoSacBuilder.jsx'
+import { PlusIcon } from '../ui/icons.jsx'
 
 export default function SkillsSection({ active, onAskQuick, query = '', onQueryChange }) {
   const [goSacVisible, setGoSacVisible] = useState(false)

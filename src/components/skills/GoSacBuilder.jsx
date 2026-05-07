@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import JSZip from 'jszip'
-import { ChevronDown, DownloadIcon, SparkleIcon } from './icons.jsx'
+import { ChevronDown, DownloadIcon, SparkleIcon } from '../ui/icons.jsx'
+import './skills.css'
 
 const SKILL_MD = `---
 name: go-sac

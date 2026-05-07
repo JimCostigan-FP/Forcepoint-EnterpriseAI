@@ -1,4 +1,4 @@
-import { PORTAL_DATA } from '../../data.js'
+import { PORTAL_DATA } from '../../data/portal.js'
 
 export default function NewsSection({ active }) {
   return (

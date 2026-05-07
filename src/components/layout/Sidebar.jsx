@@ -1,7 +1,8 @@
 import {
   HomeIcon, BookIcon, NewsIcon, SkillsIcon, PromptIcon,
   EventIcon, TeamIcon, ArchIcon, SignalIcon,
-} from './icons.jsx'
+} from '../ui/icons.jsx'
+import './Sidebar.css'
 
 const ICONS = {
   home:         HomeIcon,

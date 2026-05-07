@@ -1,0 +1,34 @@
+/* PromptsSection — peer-reviewed prompt cards. */
+
+.prompt-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-3);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  position: relative;
+}
+.prompt-card:hover { border-color: var(--border-default); box-shadow: var(--shadow-sm); }
+.prompt-card .badge { margin-bottom: var(--space-3); }
+
+.prompt-q {
+  font-size: var(--fs-13);
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--teal-mid);
+  border-radius: var(--radius-md);
+  line-height: 1.55;
+  margin-bottom: var(--space-3);
+}
+.prompt-meta {
+  font-size: var(--fs-12);
+  color: var(--text-tertiary);
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+.prompt-meta span { display: inline-flex; align-items: center; gap: 5px; }

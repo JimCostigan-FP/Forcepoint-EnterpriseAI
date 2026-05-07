@@ -1,5 +1,6 @@
-import { PORTAL_DATA } from '../../data.js'
-import { ArrowRight, PlusIcon } from '../icons.jsx'
+import { PORTAL_DATA } from '../../data/portal.js'
+import { ArrowRight, PlusIcon } from '../ui/icons.jsx'
+import './PromptsSection.css'
 
 export default function PromptsSection({ active, onAskQuick }) {
   return (

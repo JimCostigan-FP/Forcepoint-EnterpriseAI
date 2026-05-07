@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import ISSUE_1_HTML from '../../../signal/signal_newsletter_issue1.html?raw'
+import ISSUE_1_HTML from '../../content/signal/signal_newsletter_issue1.html?raw'
 
 const ISSUES = [
   {

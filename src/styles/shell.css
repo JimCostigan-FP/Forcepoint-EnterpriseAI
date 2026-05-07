@@ -1,0 +1,50 @@
+/* App shell layout. Topbar full-width, sidebar + main below. */
+
+#root {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: var(--topbar-h) 1fr;
+  grid-template-areas:
+    "topbar  topbar"
+    "sidebar main";
+  transition: grid-template-columns var(--dur-3) var(--ease);
+}
+#root[data-sidebar-open="false"] {
+  grid-template-columns: var(--sidebar-w-collapsed) 1fr;
+}
+
+.main {
+  grid-area: main;
+  min-width: 0;
+  padding: var(--space-7) var(--space-7) var(--space-9);
+}
+.main-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+/* Mobile drawer backdrop. Sidebar drawer behavior lives in Sidebar.css. */
+.mobile-nav-backdrop {
+  position: fixed;
+  inset: var(--topbar-h) 0 0 0;
+  background: rgba(11, 20, 34, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 90;
+  animation: overlayIn var(--dur-2) var(--ease);
+}
+
+/* ── RESPONSIVE — generic layout adjustments ────────────── */
+@media (max-width: 1024px) {
+  .main { padding: var(--space-5); }
+}
+
+@media (max-width: 720px) {
+  #root {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "topbar"
+      "main";
+  }
+  .main { padding: var(--space-4) var(--space-4) var(--space-7); }
+}

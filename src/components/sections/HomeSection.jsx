@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { PORTAL_DATA } from '../../data.js'
+import { PORTAL_DATA } from '../../data/portal.js'
+import { parseLocalDate, formatTimeRange, todayLocal } from '../../lib/date.js'
 import {
   ArrowRight, ArrowUpRight, TrendUp, SparkleIcon, PinIcon,
   CustomizeIcon, PromptIcon, EventIcon,
-} from '../icons.jsx'
+} from '../ui/icons.jsx'
+import './HomeSection.css'
 
 function greeting() {
   const h = new Date().getHours()
@@ -53,7 +55,21 @@ export default function HomeSection({ active, onShowSection, onAskQuick }) {
     setPinned(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
   }
 
-  const upcoming = PORTAL_DATA.events.slice(0, 3)
+  const TODAY = todayLocal()
+  const upcoming = PORTAL_DATA.events
+    .filter(e => parseLocalDate(e.date) >= TODAY)
+    .sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date))
+    .slice(0, 3)
+    .map(e => {
+      const d = parseLocalDate(e.date)
+      const month = d.toLocaleDateString('en-US', { month: 'short' })
+      const day   = d.getDate()
+      const time  = formatTimeRange(e.start, e.end, e.tz)
+      const where = e.format === 'hybrid' ? `${e.location} + Virtual` :
+                    e.format === 'in-person' ? (e.location || 'In person') : 'Virtual'
+      const dotClass = (d - TODAY) < 14 * 24 * 60 * 60 * 1000 ? 'dot-soon' : 'dot-upcoming'
+      return { ...e, meta: `${month} ${day} · ${time} · ${where}`, dotClass }
+    })
 
   return (
     <section className={`portal-section${active ? ' active' : ''}`}>

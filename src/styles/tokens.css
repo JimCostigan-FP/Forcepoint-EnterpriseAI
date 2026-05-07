@@ -1,0 +1,190 @@
+/* ─────────────────────────────────────────────────────────
+   Design tokens — single source of truth.
+   :root for light mode, [data-theme="dark"] overrides for dark.
+
+   ╭─────────────────────────────────────────────────────────╮
+   │ DESIGN SYSTEM REFERENCE — read this before you add CSS  │
+   ╰─────────────────────────────────────────────────────────╯
+
+   1. TOKENS
+      All colors, spacing, radii, shadows, typography go through CSS
+      custom properties defined below. Never hard-code colors in
+      component rules or JSX inline styles.
+
+   2. PRIMITIVES (reusable across the app — see primitives.css)
+      .btn / .btn-{variant}    .btn-sm / .btn-lg / .btn-xs
+      .icon-btn                 .badge / .badge-{tone}
+      .card / .card-pad / .card-head
+      .input / .field / .field-label / .field-hint
+      .list-items / .list-item / .list-date
+      .nav-card / .amb-card / .card-grid
+      .arch-block / .skill-tag / .event-dot
+
+   3. LAYOUT (shell.css + per-component files)
+      #root              grid: topbar (full-width) + sidebar + main
+      .topbar            sticky 3-zone (left | center | right) flex bar
+      .sidebar           sticky vertical nav (off-canvas drawer ≤720px)
+      .main              content scroll region with .main-inner max-width
+
+   4. NAMING
+      .component-name             base
+      .component-name-element     descendant
+      .component-name.is-state    state modifier
+      .component-name.tone-x      semantic variant
+      Keep flat selectors, max two levels of nesting.
+
+   5. THEMING
+      Light is default. Dark is opt-in via [data-theme="dark"].
+      All component rules SHOULD work in both modes by referencing
+      tokens. Group dark-mode-specific overrides immediately after
+      base rules of the same component.
+
+   6. RESPONSIVE
+      Mobile breakpoint: 720px. Tablet/desktop share the layout —
+      only paddings and stat columns change. Sidebar becomes an
+      off-canvas drawer at ≤720px.
+   ───────────────────────────────────────────────────────── */
+
+:root {
+  /* Brand */
+  --navy:           #042C53;
+  --navy-deep:      #02192F;
+  --navy-mid:       #0C447C;
+  --navy-light:     #185FA5;
+
+  --teal:           #0F6E56;
+  --teal-mid:       #1D9E75;
+  --teal-light:     #5DCAA5;
+
+  /* Semantic accents (used sparingly) */
+  --accent-violet:  #7C3AED;
+  --accent-amber:   #B45309;
+  --accent-rose:    #BE123C;
+  --accent-blue:    #1D4ED8;
+
+  /* Surfaces — light mode default */
+  --bg-app:         #F7F8FA;
+  --bg-surface:     #FFFFFF;
+  --bg-subtle:      #F2F4F7;
+  --bg-muted:       #ECEFF3;
+  --bg-inverse:     #0B1422;
+
+  /* Borders */
+  --border-subtle:  rgba(15, 23, 42, 0.06);
+  --border-default: rgba(15, 23, 42, 0.10);
+  --border-strong:  rgba(15, 23, 42, 0.16);
+  --border-focus:   rgba(29, 158, 117, 0.45);
+
+  /* Text */
+  --text-primary:   #0B1422;
+  --text-secondary: #475467;
+  --text-tertiary:  #667085;
+  --text-disabled:  #98A2B3;
+  --text-inverse:   #FFFFFF;
+
+  /* Subtle tint surfaces */
+  --tint-teal:      rgba(29, 158, 117, 0.10);
+  --tint-teal-2:    rgba(29, 158, 117, 0.16);
+  --tint-navy:      rgba(24, 95, 165, 0.10);
+  --tint-amber:     rgba(180, 83, 9, 0.10);
+  --tint-rose:      rgba(190, 18, 60, 0.10);
+  --tint-violet:    rgba(124, 58, 237, 0.10);
+
+  /* Typography */
+  --font-sans:      'Inter', 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:      'JetBrains Mono', 'DM Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* Type scale (rem) */
+  --fs-11: 0.6875rem;
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-15: 0.9375rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-30: 1.875rem;
+  --fs-36: 2.25rem;
+
+  /* Spacing — 4px base */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  40px;
+  --space-9:  48px;
+  --space-10: 64px;
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-xs:  0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm:  0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-md:  0 2px 4px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-lg:  0 8px 24px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.04);
+  --shadow-xl:  0 24px 48px rgba(15, 23, 42, 0.14), 0 8px 16px rgba(15, 23, 42, 0.06);
+  --shadow-focus: 0 0 0 3px rgba(29, 158, 117, 0.18);
+
+  /* Layout */
+  --sidebar-w:           248px;
+  --sidebar-w-collapsed: 64px;
+  --topbar-h:            56px;
+  --content-max:         1320px;
+
+  /* Motion */
+  --ease:        cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-emph:   cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-1:       120ms;
+  --dur-2:       180ms;
+  --dur-3:       260ms;
+
+  /* Common transition shortcuts */
+  --t-fast:    all var(--dur-1) var(--ease);
+  --t-base:    all var(--dur-2) var(--ease);
+  --t-slow:    all var(--dur-3) var(--ease);
+  --t-colors:  background-color var(--dur-1) var(--ease),
+               color var(--dur-1) var(--ease),
+               border-color var(--dur-1) var(--ease);
+}
+
+[data-theme="dark"] {
+  --bg-app:         #0A0E14;
+  --bg-surface:     #11151D;
+  --bg-subtle:      #161B25;
+  --bg-muted:       #1B2230;
+  --bg-inverse:     #F1F5F9;
+
+  --border-subtle:  rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.09);
+  --border-strong:  rgba(255, 255, 255, 0.16);
+
+  --text-primary:   #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary:  #64748B;
+  --text-disabled:  #475569;
+  --text-inverse:   #0B1422;
+
+  --tint-teal:      rgba(93, 202, 165, 0.14);
+  --tint-teal-2:    rgba(93, 202, 165, 0.22);
+  --tint-navy:      rgba(93, 165, 233, 0.14);
+  --tint-amber:     rgba(245, 158, 11, 0.14);
+  --tint-rose:      rgba(244, 63, 94, 0.14);
+  --tint-violet:    rgba(167, 139, 250, 0.14);
+
+  --shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.40), 0 2px 4px rgba(0, 0, 0, 0.25);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.50), 0 4px 8px rgba(0, 0, 0, 0.30);
+  --shadow-xl:  0 24px 48px rgba(0, 0, 0, 0.60), 0 8px 16px rgba(0, 0, 0, 0.35);
+}

@@ -1,5 +1,5 @@
-import { PORTAL_DATA } from '../../data.js'
-import { ArrowRight } from '../icons.jsx'
+import { PORTAL_DATA } from '../../data/portal.js'
+import { ArrowRight } from '../ui/icons.jsx'
 
 export default function HowtosSection({ active, onAskQuick }) {
   return (

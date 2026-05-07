@@ -5,7 +5,8 @@ import {
   UploadCloudIcon, FileIcon, FileJsonIcon, FileCodeIcon,
   CheckIcon, XIcon, ChevronDown, GithubIcon, ArrowRight,
   PlusIcon, InfoIcon,
-} from './icons.jsx'
+} from '../ui/icons.jsx'
+import './skills.css'
 
 const GITHUB_CONFIG = {
   PAT:   import.meta.env.VITE_GITHUB_PAT,
