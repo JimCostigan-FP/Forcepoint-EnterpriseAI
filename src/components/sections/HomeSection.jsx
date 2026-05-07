@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { PORTAL_DATA } from '../../data.js'
 import {
   ArrowRight, ArrowUpRight, TrendUp, SparkleIcon, PinIcon,
-  CustomizeIcon, BookIcon, SkillsIcon, PromptIcon, EventIcon,
-  TeamIcon, ArchIcon,
+  CustomizeIcon, PromptIcon, EventIcon,
 } from '../icons.jsx'
 
 function greeting() {
@@ -14,19 +13,19 @@ function greeting() {
 }
 
 const STATS = [
-  { label: 'Approved skills',    value: '12', delta: '+2',  deltaTone: 'teal',    foot: 'this month' },
-  { label: 'Active ambassadors', value: '24', delta: '6 teams', deltaTone: 'neutral', foot: 'across departments' },
-  { label: 'Showcase prompts',   value: '32', delta: '+8',  deltaTone: 'teal',    foot: 'peer-reviewed' },
-  { label: 'Avg. token savings', value: '47%', delta: '↑',  deltaTone: 'teal',    foot: 'vs. baseline' },
+  { label: 'Approved skills',    value: '12',  delta: '+2',     deltaTone: 'teal',    foot: 'this month' },
+  { label: 'Active ambassadors', value: '24',  delta: '6 teams',deltaTone: 'neutral', foot: 'across departments' },
+  { label: 'Showcase prompts',   value: '32',  delta: '+8',     deltaTone: 'teal',    foot: 'peer-reviewed' },
+  { label: 'Avg. token savings', value: '47%', delta: '↑',      deltaTone: 'teal',    foot: 'vs. baseline' },
 ]
 
-const PINNED = [
-  { id: 'skills',    title: 'Skills library',    desc: 'Approved, production-ready AI skills.',         icon: 'S', tone: 'teal' },
-  { id: 'prompts',   title: 'Prompt showcase',   desc: 'Peer-reviewed prompts you can run today.',       icon: 'P', tone: 'amber' },
-  { id: 'howtos',    title: 'How-tos & tips',    desc: 'Practical guidance for everyday AI work.',       icon: 'H', tone: 'navy' },
-  { id: 'events',    title: 'Events calendar',   desc: 'Brown bags, workshops, AI Council sessions.',    icon: 'E', tone: 'violet' },
-  { id: 'ambassador',title: 'AI Ambassador',     desc: 'Program structure, roles, and how to join.',     icon: 'A', tone: 'teal' },
-  { id: 'architecture',title:'Architecture & IT',desc: 'How to integrate cleanly with the platform.',    icon: 'IT',tone: 'navy' },
+const TOOLS = [
+  { id: 'skills',       title: 'Skills library',     desc: 'Approved, production-ready AI skills.',      icon: 'S',  tone: 'teal' },
+  { id: 'prompts',      title: 'Prompt showcase',    desc: 'Peer-reviewed prompts you can run today.',    icon: 'P',  tone: 'amber' },
+  { id: 'howtos',       title: 'How-tos & tips',     desc: 'Practical guidance for everyday AI work.',    icon: 'H',  tone: 'navy' },
+  { id: 'events',       title: 'Events calendar',    desc: 'Brown bags, workshops, AI Council sessions.', icon: 'E',  tone: 'violet' },
+  { id: 'ambassador',   title: 'AI Ambassador',      desc: 'Program structure, roles, and how to join.',  icon: 'A',  tone: 'teal' },
+  { id: 'architecture', title: 'Architecture & IT',  desc: 'How to integrate cleanly with the platform.', icon: 'IT', tone: 'navy' },
 ]
 
 const ACTIVITY = [
@@ -47,6 +46,7 @@ const SUGGESTED_PROMPTS = [
 
 export default function HomeSection({ active, onShowSection, onAskQuick }) {
   const [pinned, setPinned] = useState(['skills', 'prompts', 'howtos', 'events'])
+  const [customizing, setCustomizing] = useState(false)
 
   function togglePin(id, e) {
     e.stopPropagation()
@@ -54,7 +54,6 @@ export default function HomeSection({ active, onShowSection, onAskQuick }) {
   }
 
   const upcoming = PORTAL_DATA.events.slice(0, 3)
-  const news     = PORTAL_DATA.news.slice(0, 3)
 
   return (
     <section className={`portal-section${active ? ' active' : ''}`}>
@@ -73,11 +72,17 @@ export default function HomeSection({ active, onShowSection, onAskQuick }) {
             </p>
           </div>
           <div className="hero-actions">
-            <button className="btn btn-primary btn-lg" onClick={() => onAskQuick('Summarize the latest changes in the Forcepoint Enterprise AI program')}>
+            <button
+              className="btn btn-primary btn-lg"
+              onClick={() => onAskQuick('Summarize the latest changes in the Forcepoint Enterprise AI program')}
+            >
               <SparkleIcon size={14} />
               Ask AI
             </button>
-            <button className="btn btn-secondary btn-lg" onClick={() => onShowSection('skills')}>
+            <button
+              className="btn btn-secondary btn-lg"
+              onClick={() => onShowSection('skills')}
+            >
               Browse skills
               <ArrowRight size={14} />
             </button>
@@ -108,33 +113,35 @@ export default function HomeSection({ active, onShowSection, onAskQuick }) {
         <div className="dash-col">
 
           {/* Pinned tools */}
-          <div className="card">
+          <div className={`card${customizing ? ' is-customizing' : ''}`}>
             <div className="card-head">
               <div className="card-head-title">
                 <PinIcon size={14} className="card-head-icon" />
                 Pinned tools
+                <span className="card-head-count">{pinned.length}</span>
               </div>
               <button
                 type="button"
                 className="card-head-link"
-                onClick={() => onAskQuick('Help me customize my Forcepoint AI portal dashboard')}
-                title="Customize"
+                onClick={() => setCustomizing(c => !c)}
+                title={customizing ? 'Done customizing' : 'Customize pinned tools'}
+                aria-pressed={customizing}
               >
                 <CustomizeIcon size={14} />
-                Customize
+                {customizing ? 'Done' : 'Customize'}
               </button>
             </div>
             <div className="pinned-grid">
-              {PINNED.map(t => {
+              {TOOLS.map(t => {
                 const isPinned = pinned.includes(t.id)
                 return (
                   <div
-                    className="tool-card"
+                    className={`tool-card${isPinned ? ' is-pinned' : ''}`}
                     key={t.id}
                     onClick={() => onShowSection(t.id)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={e => { if (e.key === 'Enter') onShowSection(t.id) }}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onShowSection(t.id) } }}
                   >
                     <div className="tool-card-row">
                       <div className={`tool-card-icon ${t.tone}`}>{t.icon}</div>
@@ -142,7 +149,7 @@ export default function HomeSection({ active, onShowSection, onAskQuick }) {
                         type="button"
                         className={`tool-card-pin${isPinned ? ' active' : ''}`}
                         onClick={e => togglePin(t.id, e)}
-                        aria-label={isPinned ? 'Unpin' : 'Pin'}
+                        aria-label={isPinned ? `Unpin ${t.title}` : `Pin ${t.title}`}
                         title={isPinned ? 'Unpin' : 'Pin'}
                       >
                         <PinIcon size={13} />
@@ -246,7 +253,7 @@ export default function HomeSection({ active, onShowSection, onAskQuick }) {
                 <ArrowRight size={12} />
               </button>
             </div>
-            <div className="list-items" style={{ border: 'none', borderRadius: 0 }}>
+            <div className="list-items list-items-flush">
               {upcoming.map((e, i) => (
                 <div className="list-item" key={i}>
                   <div className={`event-dot ${e.dotClass}`} aria-hidden="true" />
@@ -274,7 +281,7 @@ export default function HomeSection({ active, onShowSection, onAskQuick }) {
           onClick={() => onAskQuick('Tell me about the Forcepoint Enterprise AI program')}
         >
           Learn more
-          <ArrowRight size={13} style={{ marginLeft: 4 }} />
+          <ArrowRight size={13} />
         </button>
       </div>
     </section>

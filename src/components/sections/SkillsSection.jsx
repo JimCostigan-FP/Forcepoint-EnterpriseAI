@@ -1,36 +1,40 @@
-import { useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
 import { PORTAL_DATA } from '../../data.js'
 import SkillSubmit from '../SkillSubmit.jsx'
 import SkillBuilder from '../SkillBuilder.jsx'
 import GoSacBuilder from '../GoSacBuilder.jsx'
-import { ArrowRight, PlusIcon } from '../icons.jsx'
+import { PlusIcon } from '../icons.jsx'
 
-export default function SkillsSection({ active, onAskQuick, initialQuery = '' }) {
-  const [query, setQuery] = useState('')
+export default function SkillsSection({ active, onAskQuick, query = '', onQueryChange }) {
   const [goSacVisible, setGoSacVisible] = useState(false)
-
-  // Sync from global topbar search when we navigate into this section
-  useEffect(() => {
-    if (active && initialQuery) setQuery(initialQuery)
-  }, [active, initialQuery])
+  const [submitOpen,   setSubmitOpen]   = useState(false)
+  const submitRef = useRef(null)
 
   const filtered = PORTAL_DATA.skills.filter(s => {
-    if (!query.trim()) return true
-    const q = query.toLowerCase()
+    const q = (query || '').trim().toLowerCase()
+    if (!q) return true
     return (s.searchText + ' ' + s.title.toLowerCase()).includes(q)
   })
+
+  function openSubmit() {
+    setSubmitOpen(true)
+    // Wait for the panel to expand before scrolling, then center it in view.
+    requestAnimationFrame(() => {
+      submitRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   return (
     <section className={`portal-section${active ? ' active' : ''}`}>
       <div className="section-header">
         <div className="section-header-text">
           <h2>Enterprise skills library</h2>
-          <p>Approved, production-ready skills governed by the Enterprise AI architecture team. Submit new skills via Jira (AI project).</p>
+          <p>Approved, production-ready skills governed by the Enterprise AI architecture team. Submit new skills via the governance pipeline below.</p>
         </div>
         <div className="section-header-actions">
           <button
             className="btn btn-primary"
-            onClick={() => onAskQuick('How do I submit a new AI skill for review in the Enterprise AI skills governance process?')}
+            onClick={openSubmit}
           >
             <PlusIcon size={14} />
             Submit a skill
@@ -43,7 +47,7 @@ export default function SkillsSection({ active, onAskQuick, initialQuery = '' })
         className="search-input"
         placeholder="Search skills…"
         value={query}
-        onChange={e => setQuery(e.target.value)}
+        onChange={e => onQueryChange?.(e.target.value)}
         aria-label="Search skills"
       />
 
@@ -64,13 +68,25 @@ export default function SkillsSection({ active, onAskQuick, initialQuery = '' })
           <div className="list-item">
             <div className="list-body">
               <div className="list-title">No matching skills</div>
-              <div className="list-desc">Try a different search term, or browse the full library by clearing the search.</div>
+              <div className="list-desc">
+                Try a different search term, or{' '}
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() => onQueryChange?.('')}
+                >
+                  clear the search
+                </button>{' '}
+                to see the full library.
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      <SkillSubmit />
+      <div ref={submitRef}>
+        <SkillSubmit open={submitOpen} onOpenChange={setSubmitOpen} />
+      </div>
 
       <SkillBuilder onFirstDownload={() => setGoSacVisible(true)} />
 

@@ -1,5 +1,5 @@
 import { PORTAL_DATA } from '../../data.js'
-import { ArrowRight, PlusIcon } from '../icons.jsx'
+import { PlusIcon } from '../icons.jsx'
 
 export default function EventsSection({ active, onAskQuick }) {
   return (

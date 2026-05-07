@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import JSZip from 'jszip'
+import { ChevronDown, DownloadIcon, CopyIcon } from './icons.jsx'
 
 const DEFAULT_RESPONSES = [
   'Say: "Hello! Your Claude Skill is working correctly."',
@@ -105,19 +106,24 @@ export default function SkillBuilder({ onFirstDownload }) {
 
   return (
     <div className="skill-builder-wrap">
-      <div className="skill-builder-header" onClick={() => setIsOpen(o => !o)}>
-        <div className="skill-builder-title">
-          <div className="card-icon teal" style={{ width: 28, height: 28, fontSize: 11, margin: 0 }}>S</div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy)' }}>Skill builder</div>
-            <div style={{ fontSize: 11, color: 'var(--text-light)' }}>Generate a ready-to-upload skill ZIP in your browser</div>
+      <button
+        type="button"
+        className={`skill-builder-header${isOpen ? ' is-open' : ''}`}
+        onClick={() => setIsOpen(o => !o)}
+        aria-expanded={isOpen}
+      >
+        <div className="ss-header-left">
+          <div className="ss-header-icon ss-header-icon-teal">S</div>
+          <div className="ss-header-text">
+            <div className="ss-header-title">Skill builder</div>
+            <div className="ss-header-sub">Generate a ready-to-upload skill ZIP in your browser</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="ss-header-right">
           <span className="badge badge-design">Beta</span>
-          <span className={`sb-chevron${isOpen ? ' open' : ''}`}>&#x25BE;</span>
+          <ChevronDown size={16} className={`sb-chevron${isOpen ? ' open' : ''}`} />
         </div>
-      </div>
+      </button>
 
       <div className={`skill-builder-body${isOpen ? '' : ' collapsed'}`}>
         {/* Left: form */}
@@ -159,8 +165,14 @@ export default function SkillBuilder({ onFirstDownload }) {
           )}
 
           <div className="sb-actions">
-            <button className="sb-btn-ghost" onClick={copyMd}>Copy SKILL.md</button>
-            <button className="sb-btn-primary" onClick={download}>Create Skill &#x2192;</button>
+            <button type="button" className="sb-btn-ghost" onClick={copyMd}>
+              <CopyIcon size={12} />
+              Copy SKILL.md
+            </button>
+            <button type="button" className="sb-btn-primary" onClick={download}>
+              <DownloadIcon size={12} />
+              Create skill
+            </button>
           </div>
           <div className="sb-status">{status}</div>
         </div>
@@ -171,7 +183,7 @@ export default function SkillBuilder({ onFirstDownload }) {
             <span className="skill-preview-dot"></span>
             <span className="skill-preview-dot"></span>
             <span className="skill-preview-dot"></span>
-            <span style={{ fontSize: 10, color: 'var(--text-light)', marginLeft: 6, fontFamily: 'var(--font-mono)' }}>SKILL.md</span>
+            <span className="skill-preview-name">SKILL.md</span>
           </div>
           <pre className="skill-preview-code" dangerouslySetInnerHTML={{ __html: previewHtml }} />
         </div>
@@ -181,7 +193,9 @@ export default function SkillBuilder({ onFirstDownload }) {
       {showModal && (
         <div className="sb-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}>
           <div className="sb-modal">
-            <div className="sb-modal-icon">&#x2b07;</div>
+            <div className="sb-modal-icon-wrap">
+              <DownloadIcon size={20} />
+            </div>
             <h3 className="sb-modal-title">Your skill is downloading</h3>
             <p className="sb-modal-body"><strong>{modalFile}</strong> is saving to your computer.</p>
             <div className="sb-modal-steps">

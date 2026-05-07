@@ -1,30 +1,57 @@
-import { SearchIcon, BellIcon, SunIcon, MoonIcon, SparkleIcon } from './icons.jsx'
+import { SearchIcon, BellIcon, SunIcon, MoonIcon, ChevronDown } from './icons.jsx'
 
 export default function Topbar({
-  activeLabel, theme, onToggleTheme, onAskAI, onSearch, searchValue,
+  activeLabel, theme, onToggleTheme,
+  onSearch, searchValue, onSearchSubmit, onToggleSidebar,
 }) {
   return (
     <header className="topbar" role="banner">
-      <div className="topbar-breadcrumb" aria-label="Breadcrumb">
-        <span className="topbar-breadcrumb-item">Forcepoint AI</span>
-        <span className="topbar-breadcrumb-sep">/</span>
-        <span className="topbar-breadcrumb-current topbar-breadcrumb-item">{activeLabel}</span>
+
+      {/* ── Left: brand + breadcrumb ─────────────────────── */}
+      <div className="topbar-zone topbar-zone-left">
+        <button
+          type="button"
+          className="topbar-brand"
+          onClick={onToggleSidebar}
+          aria-label="Toggle navigation"
+          title="Toggle navigation"
+        >
+          <span className="topbar-brand-mark" aria-hidden="true">FP</span>
+          <span className="topbar-brand-text">
+            <span className="topbar-brand-title">Enterprise AI</span>
+            <span className="topbar-brand-sub">Forcepoint · IT</span>
+          </span>
+        </button>
+
+        <div className="topbar-divider" aria-hidden="true" />
+
+        <nav aria-label="Breadcrumb" className="topbar-breadcrumb">
+          <span className="topbar-breadcrumb-current">{activeLabel}</span>
+        </nav>
       </div>
 
-      <div className="topbar-search">
-        <SearchIcon size={16} className="topbar-search-icon" />
-        <input
-          type="search"
-          className="topbar-search-input"
-          placeholder="Search skills, prompts, docs…"
-          value={searchValue ?? ''}
-          onChange={e => onSearch?.(e.target.value)}
-          aria-label="Search portal"
-        />
-        <span className="topbar-search-kbd" aria-hidden="true">⌘K</span>
+      {/* ── Center: command-palette-style search ─────────── */}
+      <div className="topbar-zone topbar-zone-center">
+        <form
+          className="topbar-search"
+          onSubmit={e => { e.preventDefault(); onSearchSubmit?.() }}
+          role="search"
+        >
+          <SearchIcon size={15} className="topbar-search-icon" />
+          <input
+            type="search"
+            className="topbar-search-input"
+            placeholder="Search skills, prompts, docs…"
+            value={searchValue ?? ''}
+            onChange={e => onSearch?.(e.target.value)}
+            aria-label="Search portal"
+          />
+          <kbd className="topbar-search-kbd" aria-hidden="true">⌘K</kbd>
+        </form>
       </div>
 
-      <div className="topbar-actions">
+      {/* ── Right: status actions + user ─────────────────── */}
+      <div className="topbar-zone topbar-zone-right">
         <button
           type="button"
           className="icon-btn"
@@ -45,15 +72,20 @@ export default function Topbar({
           <span className="icon-dot" aria-hidden="true" />
         </button>
 
+        <div className="topbar-divider" aria-hidden="true" />
+
         <button
           type="button"
-          className="ask-ai-btn"
-          onClick={onAskAI}
-          aria-label="Ask AI"
-          title="Ask AI (⌘K)"
+          className="topbar-profile"
+          aria-label="Account menu"
+          title="Jim Costigan · AI Program Manager"
         >
-          <SparkleIcon size={14} className="ask-ai-btn-icon" />
-          <span className="ask-ai-btn-label">Ask AI</span>
+          <span className="topbar-profile-avatar" aria-hidden="true">JC</span>
+          <span className="topbar-profile-text">
+            <span className="topbar-profile-name">Jim Costigan</span>
+            <span className="topbar-profile-role">AI Program Manager</span>
+          </span>
+          <ChevronDown size={14} className="topbar-profile-chevron" />
         </button>
       </div>
     </header>
