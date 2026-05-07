@@ -4,9 +4,12 @@ export default function NewsSection({ active }) {
   return (
     <section className={`portal-section${active ? ' active' : ''}`}>
       <div className="section-header">
-        <h2>Latest news</h2>
-        <p>Stay current on what's happening in the Enterprise AI program.</p>
+        <div className="section-header-text">
+          <h2>Latest news</h2>
+          <p>Stay current on what's happening in the Enterprise AI program.</p>
+        </div>
       </div>
+
       <div className="list-items">
         {PORTAL_DATA.news.map((item, i) => (
           <div className="list-item" key={i}>

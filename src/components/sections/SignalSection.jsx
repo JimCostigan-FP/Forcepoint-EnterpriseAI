@@ -19,8 +19,10 @@ export default function SignalSection({ active }) {
       {viewing === null ? (
         <>
           <div className="section-header">
-            <h2>The Signal</h2>
-            <p>Enterprise AI Weekly — the official broadcast from the Forcepoint AI program. Published every week by Jim Costigan, AI Program Manager.</p>
+            <div className="section-header-text">
+              <h2>The Signal</h2>
+              <p>Enterprise AI Weekly — the official broadcast from the Forcepoint AI program. Published every week by Jim Costigan, AI Program Manager.</p>
+            </div>
           </div>
 
           <div className="list-items">
@@ -30,19 +32,22 @@ export default function SignalSection({ active }) {
                 key={i}
                 style={{ cursor: 'pointer' }}
                 onClick={() => setViewing(i)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => { if (e.key === 'Enter') setViewing(i) }}
               >
                 <div className="list-date">
-                  <div className="day" style={{ fontSize: 13 }}>#{issue.number}</div>
+                  <div className="day" style={{ fontSize: 14 }}>#{issue.number}</div>
                   <div className="month">Issue</div>
                 </div>
                 <div className="list-body">
                   <span className="badge badge-policy">Newsletter</span>
                   <div className="list-title">{issue.title}</div>
-                  <div className="list-desc" style={{ marginBottom: '0.35rem' }}>{issue.summary}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-light)' }}>{issue.date}</div>
+                  <div className="list-desc" style={{ marginBottom: 6 }}>{issue.summary}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{issue.date}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', paddingRight: '0.5rem' }}>
-                  <span style={{ fontSize: 18, color: 'var(--teal)', fontWeight: 700 }}>›</span>
+                <div style={{ display: 'flex', alignItems: 'center', paddingRight: 4, color: 'var(--text-tertiary)', fontSize: 18 }}>
+                  ›
                 </div>
               </div>
             ))}
@@ -50,21 +55,28 @@ export default function SignalSection({ active }) {
         </>
       ) : (
         <>
-          <div style={{ padding: '1rem 1.5rem 0' }}>
-            <button
-              className="sb-btn-ghost"
-              style={{ fontSize: 12, marginBottom: '1rem' }}
-              onClick={() => setViewing(null)}
-            >
-              ← All issues
-            </button>
+          <button
+            className="btn btn-secondary btn-sm"
+            style={{ marginBottom: 'var(--space-4)' }}
+            onClick={() => setViewing(null)}
+          >
+            ← All issues
+          </button>
+          <div
+            style={{
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-lg)',
+              overflow: 'hidden',
+              background: 'var(--bg-surface)',
+            }}
+          >
+            <iframe
+              srcDoc={ISSUES[viewing].html}
+              title={`The Signal Issue #${ISSUES[viewing].number}`}
+              style={{ width: '100%', height: '85vh', border: 'none', display: 'block' }}
+              sandbox="allow-same-origin"
+            />
           </div>
-          <iframe
-            srcDoc={ISSUES[viewing].html}
-            title={`The Signal Issue #${ISSUES[viewing].number}`}
-            style={{ width: '100%', height: '100vh', border: 'none', display: 'block' }}
-            sandbox="allow-same-origin"
-          />
         </>
       )}
     </section>
