@@ -1,157 +1,284 @@
 # Forcepoint AI Enablement Portal
 
-**Owner:** IT Enterprise AI team — ITEnterpriseAIteam@forcepoint.com  
-**Program manager:** Jim Costigan, AI Program Manager  
-**Jira:** [AI-110 — Build Dedicated AI Enablement Portal for Forcepoint](https://forcepoint.atlassian.net/browse/AI-110)  
-**Confluence:** [AI Enablement Portal](https://forcepoint.atlassian.net/wiki/spaces/AI/pages/5009637449)  
-**Architecture doc:** [Deployment Architecture](https://forcepoint.atlassian.net/wiki/spaces/AI/pages/5011832833)
+The Forcepoint AI Enablement Portal is an internal web application that centralizes AI guidance, governance, and adoption workflows for Forcepoint teams. It combines curated enablement content with secure assistant access and skill lifecycle tooling in one authenticated experience.
 
----
+## Project Purpose
 
-## What this is
+This project exists to provide a single trusted destination for:
 
-A Claude API-powered internal web portal that replaces SharePoint as Forcepoint's central hub for all things AI. Single-file HTML/CSS/JS frontend, with an optional Azure Function proxy for production API calls.
+- Practical AI onboarding content (how-tos, prompts, events, and news)
+- Departmental AI ambassador program support
+- Skill lifecycle support (drafting, packaging, and submission)
+- Secure enterprise AI assistance aligned to Forcepoint policy
+- Architecture and ownership clarity between IT and business teams
 
-Seven sections: How-tos & tips · Latest news · Skills library · Prompt showcase · Events · AI Ambassador program · Architecture & IT guidance.
+## Key Capabilities
 
----
+- React single-page portal with section-based navigation
+- Auth-protected access through Azure Static Web Apps + Microsoft Entra ID
+- Server-side proxy endpoint for Anthropic API calls at `/api/ask`
+- Content-driven UI powered by versioned source data
+- Skill tooling:
+  - Skill package builder (`SKILL.md` ZIP generation)
+  - Skill submission flow with GitHub file/PR automation
+  - Guided metadata and documentation generation support
 
-## File structure
+## Portal Sections
 
+- Overview
+- How-tos & tips
+- Latest news
+- Skills library
+- Prompt showcase
+- Events
+- AI Ambassador
+- Architecture & IT
+- The Signal
+
+## Technical Architecture
+
+### Frontend
+
+- Framework: React 18
+- Build tool: Vite 5
+- Entry point: `src/main.jsx`
+- App shell and section orchestration: `src/App.jsx`
+
+### API
+
+- Runtime: Azure Functions (Node.js 20)
+- Endpoint: `api/ask/index.js`
+- Purpose:
+  - Keep Anthropic API credentials server-side
+  - Enable centralized policy controls (DLP, logging, throttling)
+  - Return model responses to authenticated portal clients
+
+### Platform and Security
+
+- Hosting target: Azure Static Web Apps
+- Auth model: Entra ID via Static Web Apps EasyAuth
+- Route protection: authenticated access required for `/*` and `/api/*`
+- Security headers and SPA fallback configured in `staticwebapp.config.json`
+
+## Repository Structure
+
+```text
+Forcepoint-EnterpriseAI/
+├── src/
+│   ├── main.jsx                         # React bootstrap
+│   ├── App.jsx                          # Navigation + section routing
+│   ├── data.js                          # Content model for portal sections
+│   ├── api.js                           # Browser API client (direct/proxy modes)
+│   ├── portal.css                       # Global portal styles
+│   └── components/
+│       ├── Header.jsx / Footer.jsx      # Shared layout
+│       ├── SkillBuilder.jsx             # SKILL.md ZIP tooling
+│       ├── SkillSubmit.jsx              # GitHub submission + PR flow
+│       ├── GoSacBuilder.jsx             # Additional builder workflow
+│       └── sections/                    # Home/Howtos/News/etc. section components
+├── api/
+│   └── ask/index.js                     # Azure Function Anthropic proxy
+├── public/                              # Static assets
+├── staticwebapp.config.json             # Auth, headers, routing, API runtime
+├── index.html                           # Vite HTML entry
+├── package.json                         # Scripts and dependencies
+├── css/                                 # Legacy static assets (older implementation)
+├── js/                                  # Legacy static assets (older implementation)
+└── signal/                              # Additional project content/assets
 ```
-ai-portal/
-├── index.html                  ← Main HTML (single page)
-├── staticwebapp.config.json    ← Azure Static Web Apps config (auth, routing)
-├── css/
-│   └── portal.css              ← All styles (Forcepoint brand colours)
-├── js/
-│   ├── data.js                 ← All portal content (edit this to update text)
-│   ├── api.js                  ← Claude API integration (direct or proxy)
-│   └── portal.js               ← UI logic and rendering
-└── api/
-    └── ask/
-        └── index.js            ← Azure Function proxy (production use)
-```
 
----
-
-## Quick start — local testing (no server needed)
-
-1. Open `index.html` in any browser — it works from `file://`.
-2. Open `js/api.js` and add your Anthropic API key:
-   ```javascript
-   API_KEY: "sk-ant-...",   // your key here
-   ```
-3. The Ask assistant will now respond to questions using Claude.
-
-> ⚠ **Never commit a real API key to source control.** Use the proxy path for anything shared.
-
----
-
-## Production deployment on Azure Static Web Apps
+## Getting Started
 
 ### Prerequisites
-- Azure subscription with permissions to create Static Web Apps
-- Entra ID app registration (see step 3)
-- Anthropic API key stored in Azure Key Vault
 
-### Step 1 — Create the Static Web App
+- Node.js 20 or later
+- npm 9 or later
+
+### Install dependencies
 
 ```bash
-az staticwebapp create \
-  --name "fp-ai-portal" \
-  --resource-group "rg-enterprise-ai" \
-  --location "eastus2" \
-  --sku "Standard"
+npm install
 ```
 
-### Step 2 — Deploy the files
+### Run locally
 
-Option A — GitHub Actions (recommended):
 ```bash
-git init
-git add .
-git commit -m "Initial portal deploy"
-# Link your repo to the Static Web App in the Azure portal
-# GitHub Actions workflow is auto-generated
+npm run dev
 ```
 
-Option B — Azure CLI direct upload:
+Default dev URL: [http://localhost:5173](http://localhost:5173)
+
+### Build and preview production output
+
 ```bash
-az staticwebapp upload \
-  --name "fp-ai-portal" \
-  --resource-group "rg-enterprise-ai" \
-  --source "."
+npm run build
+npm run preview
 ```
 
-### Step 3 — Configure Entra ID SSO
+## Run Process (Step-by-Step)
 
-1. In the Azure portal, go to **Entra ID → App registrations → New registration**.
-2. Name: `Forcepoint AI Enablement Portal`
-3. Redirect URI: `https://<your-app>.azurestaticapps.net/.auth/login/aad/callback`
-4. Note the **Application (client) ID** and create a **client secret**.
-5. In `staticwebapp.config.json`, replace `YOUR_TENANT_ID` with your Entra tenant ID.
-6. In the Static Web App configuration, set:
-   - `AZURE_CLIENT_ID` = the app registration client ID
-   - `AZURE_CLIENT_SECRET` = the client secret (store in Key Vault, reference as a Key Vault secret)
+Use this process for day-to-day development and release preparation.
 
-### Step 4 — Configure the API proxy
+### 1) Sync and install
 
-1. In the Static Web App configuration, set:
-   - `ANTHROPIC_API_KEY` = Key Vault reference (e.g. `@Microsoft.KeyVault(SecretUri=...)`)
-   - `ANTHROPIC_MODEL` = `claude-sonnet-4-20250514`
-   - `ALLOWED_ORIGINS` = `https://ai-enablement.forcepoint.com`
+```bash
+git pull
+npm install
+```
 
-2. In `js/api.js`, set:
-   ```javascript
-   USE_PROXY: true,
-   PROXY_URL: "/api/ask",
-   API_KEY:   "",           // leave empty — key lives server-side
-   ```
+### 2) Start local development
 
-### Step 5 — Configure Forcepoint ONE ZTNA
+```bash
+npm run dev
+```
 
-Per the deployment architecture (Confluence AI-110-ARCH):
-1. Create a ZTNA private application pointing to your Static Web App URL.
-2. Deploy a ZTNA connector in the Azure vNet.
-3. Set the internal DNS entry `ai-enablement.forcepoint.com` → Static Web App.
-4. Set SWG egress policy to block direct consumer AI services; allow only the portal's LiteLLM gateway egress.
+Open [http://localhost:5173](http://localhost:5173) and verify:
 
----
+- Navigation between all portal sections
+- Content rendering from `src/data.js`
+- No console errors in the browser
 
-## Updating content
+### 3) Validate assistant mode before testing
 
-All portal content lives in `js/data.js`. Edit the arrays there to:
-- Add/remove how-to articles
-- Post news items
-- Add skills to the library
-- Update the events calendar
-- Edit ambassador program info
-- Update architecture guidance
+In `src/api.js`, decide how assistant calls should run:
 
-No rebuild is required — just update `data.js` and redeploy.
+- `USE_PROXY: false` for temporary local direct testing
+- `USE_PROXY: true` for proxy-based behavior aligned to production
 
----
+### 4) Make and verify content/app changes
 
-## Adding DLP inspection
+- Update content in `src/data.js` and/or section components in `src/components/sections/`
+- Re-check impacted pages
+- Validate any skill tooling flow if touched (`SkillBuilder`, `SkillSubmit`)
 
-The Azure Function proxy (`api/ask/index.js`) has two clearly marked TODO comments for DLP integration:
+### 5) Build before commit/deploy
 
-- **P1** — before forwarding the user's prompt to Claude
-- **P3** — before returning Claude's completion to the browser
+```bash
+npm run build
+```
 
-Add your Forcepoint DLP API calls at those points. Contact the IT Security / DLP team for the API endpoint and authentication details.
+Confirm the build succeeds without errors.
 
----
+### 6) Deploy process (high level)
 
-## Browser support
+1. Merge approved changes to the deployment branch.
+2. Ensure Static Web App app settings/secrets are present.
+3. Let GitHub Actions deploy to Azure Static Web Apps.
+4. Run post-deploy smoke checks:
+   - Auth redirect and sign-in
+   - Portal page load and section navigation
+   - `/api/ask` proxy response path
+   - Security headers and protected routes
 
-Chrome 90+, Edge 90+, Firefox 90+, Safari 14+. No build step required — vanilla HTML/CSS/JS.
+## Configuration
 
----
+### Frontend assistant configuration
 
-## Questions
+`src/api.js` defines client-side behavior:
 
-Contact: ITEnterpriseAIteam@forcepoint.com  
-Program manager: Jim Costigan (jim.costigan@forcepoint.com)  
-Jira: AI-110
+- `USE_PROXY`: whether requests go through `/api/ask`
+- `PROXY_URL`: proxy endpoint path (default `/api/ask`)
+- `API_KEY`: direct Anthropic key (local testing only)
+- `MODEL`: Anthropic model id
+- `MAX_TOKENS`: token limit per request
+
+Recommended practice:
+
+- Local experiments: direct mode can be used temporarily
+- Shared/production: use proxy mode and keep keys server-side only
+
+### Skill submission integration
+
+`src/components/SkillSubmit.jsx` uses:
+
+- `VITE_GITHUB_PAT`
+
+This token is consumed in-browser for GitHub content + PR operations. Keep scope minimal, treat as sensitive, and prefer moving this flow server-side for long-term hardening.
+
+### Proxy environment variables
+
+Configure in Azure Function / Static Web Apps settings (prefer Key Vault references):
+
+- `ANTHROPIC_API_KEY`
+- `ANTHROPIC_MODEL` (for example `claude-sonnet-4-20250514`)
+- `ALLOWED_ORIGINS` (comma-separated CORS allowlist)
+
+## Deployment Overview (Azure Static Web Apps)
+
+1. Provision a Static Web App (Standard SKU recommended for enterprise auth scenarios).
+2. Configure Entra ID:
+   - Replace `YOUR_TENANT_ID` in `staticwebapp.config.json` (`openIdIssuer`)
+   - Set `AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET` app settings
+3. Configure proxy secrets/settings (`ANTHROPIC_*`, `ALLOWED_ORIGINS`).
+4. Deploy via connected GitHub Actions CI/CD (recommended) or upload workflow.
+
+## Security and Governance Notes
+
+- Never commit API keys, PATs, or client secrets.
+- `api/ask/index.js` contains explicit DLP insertion points:
+  - P1: pre-prompt forwarding
+  - P3: pre-response return
+- All portal routes and API routes require authentication.
+- Assistant system instructions are designed to reinforce Forcepoint AI policy and safe-response behavior.
+
+## Content Management
+
+Most editorial content is centralized in `src/data.js`, including:
+
+- How-tos
+- News
+- Skills catalog cards
+- Prompt examples
+- Event listings
+- Ambassador program content
+- Architecture responsibilities and references
+
+To update portal content, edit `src/data.js`, then rebuild and redeploy.
+
+## Ownership and References
+
+- Owner: IT Enterprise AI Team (`ITEnterpriseAIteam@forcepoint.com`)
+- Program manager: Jim Costigan (`jim.costigan@forcepoint.com`)
+- Jira: [AI-110 — Build Dedicated AI Enablement Portal for Forcepoint](https://forcepoint.atlassian.net/browse/AI-110)
+- Confluence: [AI Enablement Portal](https://forcepoint.atlassian.net/wiki/spaces/AI/pages/5009637449)
+- Architecture reference: [Deployment Architecture](https://forcepoint.atlassian.net/wiki/spaces/AI/pages/5011832833)
+
+## Recommended Next Hardening Steps
+
+- Add lint/test scripts and CI quality gates.
+- Move browser-based GitHub submission actions to a backend service.
+- Complete DLP inspection implementation in `api/ask/index.js` before wider rollout.
+
+## Future Implementation Roadmap
+
+The following items are recommended for the next delivery phases.
+
+### Phase 1: Engineering quality baseline
+
+- Add ESLint + Prettier and enforce in CI.
+- Add unit tests for key React sections and helper logic.
+- Add API contract tests for `api/ask`.
+
+### Phase 2: Security and compliance controls
+
+- Implement DLP checks at P1 and P3 in `api/ask/index.js`.
+- Add centralized audit logging for assistant requests/responses (metadata only).
+- Apply API throttling/rate limits and abuse monitoring.
+
+### Phase 3: Submission workflow hardening
+
+- Move GitHub write/PR operations from browser to backend API.
+- Replace `VITE_GITHUB_PAT` usage with managed identity or secure service credentials.
+- Add approval/validation gates for skill metadata before PR creation.
+
+### Phase 4: Operations and observability
+
+- Instrument frontend and API telemetry (errors, latency, adoption).
+- Add dashboards for section usage and assistant interaction health.
+- Define SLOs and alerting for API availability and response time.
+
+### Phase 5: Product evolution
+
+- Replace stubbed `askQuick`/`askHero` integration with full assistant UX flow.
+- Add role-aware content targeting by audience/team.
+- Expand skills lifecycle with review status tracking and governance checkpoints.
