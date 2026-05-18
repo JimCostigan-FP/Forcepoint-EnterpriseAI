@@ -510,6 +510,21 @@ export default function SkillSubmit({ open, onOpenChange }) {
     setStep(4, 'pass', 'assigned')
     setStep(5, 'pass', `PR #${result.prNumber}`)
     setPrResult({ ...result, ref, name, dept, sName, sVer })
+    setSubmitDisabled(false)
+  }
+
+  const resetForNewSubmission = () => {
+    setIntent('')
+    setSkillName('')
+    setVersion('1.0')
+    setInventory({ manifest: null, readme: null, skillMd: null })
+    setSubmitted(false)
+    setSubmitDisabled(false)
+    setRefNum('')
+    setPipeSteps(PIPELINE_STEPS.map(() => ({ state: 'queued', label: 'queued' })))
+    setPipeNotes([])
+    setPrResult(null)
+    setValMsg(null)
   }
 
   const sName = skillName.trim()
@@ -699,21 +714,37 @@ export default function SkillSubmit({ open, onOpenChange }) {
             {/* Submit */}
             <div className="ss-actions">
               {valMsg && <div className="sb-validation sb-val-error">{valMsg}</div>}
-              <button
-                type="button"
-                className="sb-btn-primary sb-btn-lg"
-                disabled={submitDisabled || !allPresent}
-                onClick={submit}
-              >
-                {allPresent ? (
-                  <>
-                    Submit to governance pipeline
-                    <ArrowRight size={14} />
-                  </>
-                ) : (
-                  'Add all three files to submit'
-                )}
-              </button>
+              {prResult ? (
+                <button
+                  type="button"
+                  className="sb-btn-primary sb-btn-lg"
+                  onClick={resetForNewSubmission}
+                >
+                  <PlusIcon size={14} />
+                  Submit another skill
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="sb-btn-primary sb-btn-lg"
+                  disabled={submitDisabled}
+                  onClick={allPresent ? submit : () => fileInputRef.current?.click()}
+                >
+                  {submitDisabled ? (
+                    'Running governance pipeline…'
+                  ) : allPresent ? (
+                    <>
+                      Submit to governance pipeline
+                      <ArrowRight size={14} />
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloudIcon size={14} />
+                      Add all three files to submit
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Pipeline tracker */}

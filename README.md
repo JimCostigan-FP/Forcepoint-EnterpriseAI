@@ -151,6 +151,43 @@ npm run build
 npm run preview
 ```
 
+### Troubleshooting
+
+#### `npm install` fails with an OpenSSL version mismatch
+
+If `npm install` errors with a message about `libssl` / OpenSSL symbol versions (for
+example `version 'OPENSSL_3.4.0' not found`), the system-installed Node.js was compiled
+against a newer OpenSSL than what's available on the server. This is common on older
+Oracle/RHEL hosts.
+
+Check the system OpenSSL version:
+
+```bash
+openssl version
+```
+
+The fix is to install Node.js through **nvm**, which ships its own bundled OpenSSL and
+avoids the system library conflict:
+
+```bash
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+# Reload shell
+source ~/.bashrc
+
+# Install a compatible Node.js version
+nvm install 20
+nvm use 20
+
+# Verify
+node --version
+npm --version
+```
+
+Then re-run `npm install`. Node.js 20 is the supported runtime for this project and
+avoids the OpenSSL 3.4 dependency that ships with Node.js 22.
+
 ## Run Process (Step-by-Step)
 
 Use this process for day-to-day development and release preparation.
