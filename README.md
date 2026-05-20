@@ -290,6 +290,203 @@ Configure in Azure Function / Static Web Apps settings (prefer Key Vault referen
 3. Configure proxy secrets/settings (`ANTHROPIC_*`, `ALLOWED_ORIGINS`).
 4. Deploy via connected GitHub Actions CI/CD (recommended) or upload workflow.
 
+## Self-Hosted Deployment (Linux + nginx, VPN-only)
+
+For internal previews on a VPN-restricted Oracle Linux / RHEL host (e.g. `http://10.23.80.28/`),
+the app can be served by nginx with the Azure Function adapted to a local Node service.
+
+> **Security note:** This setup has **no Entra ID authentication** — the VPN is the perimeter.
+> EasyAuth (`staticwebapp.config.json`) is bypassed in self-host. Only use on networks where
+> every reachable client is already trusted.
+
+### Architecture
+
+```text
+            ┌────────────────────────────────────────────────┐
+ VPN client │  nginx :80                                     │
+ ──────────▶│   ├── /            → /var/www/ai-portal (dist) │
+            │   └── /api/*       → 127.0.0.1:3000            │
+            │                          │                     │
+            │                          ▼                     │
+            │                ai-portal-api.service           │
+            │            (node server/index.cjs, loads       │
+            │             api/ask/index.js as a function)    │
+            └────────────────────────────────────────────────┘
+```
+
+Key files added for self-hosting:
+
+- `server/index.cjs` — Express adapter that exposes `api/ask/index.js` over HTTP
+- `api/package.json` — scopes the Function code as CommonJS (project root uses ESM)
+- `/etc/ai-portal/api.env` — env file consumed by the systemd unit (mode `0600`, `root:root`)
+- `/etc/systemd/system/ai-portal-api.service` — systemd unit for the Node API
+- `/etc/nginx/conf.d/ai-portal.conf` — nginx site (static + `/api/` reverse proxy + SPA fallback)
+
+### One-time setup
+
+1. **Install nginx and Node 20 (via nvm).** See the OpenSSL troubleshooting note above if the
+   system `node` is broken.
+
+   ```bash
+   sudo dnf install -y nginx
+   sudo systemctl enable --now nginx
+   ```
+
+2. **Build the frontend and deploy `dist/` to a path nginx can read.**
+
+   ```bash
+   export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
+   npm install
+   npm run build
+   sudo mkdir -p /var/www/ai-portal
+   sudo rsync -a --delete dist/ /var/www/ai-portal/
+   sudo chown -R nginx:nginx /var/www/ai-portal
+   ```
+
+   `~/` is typically mode `700`, so nginx (running as `nginx`) cannot traverse into a user
+   home — always deploy the built site to `/var/www/`.
+
+3. **Create the API env file** (fill `ANTHROPIC_API_KEY` later if you don't have it yet):
+
+   ```bash
+   sudo install -d -m 0755 /etc/ai-portal
+   sudo tee /etc/ai-portal/api.env >/dev/null <<'EOF'
+   ANTHROPIC_API_KEY=
+   ANTHROPIC_MODEL=claude-sonnet-4-20250514
+   ALLOWED_ORIGINS=http://10.23.80.28
+   PORT=3000
+   EOF
+   sudo chmod 600 /etc/ai-portal/api.env
+   sudo chown root:root /etc/ai-portal/api.env
+   ```
+
+4. **Install the systemd unit** (adjust `User=` and the `node` path for your host):
+
+   ```ini
+   # /etc/systemd/system/ai-portal-api.service
+   [Unit]
+   Description=AI Portal /api/ask (Express adapter for Azure Function)
+   After=network-online.target
+   Wants=network-online.target
+
+   [Service]
+   Type=simple
+   User=mcontreras
+   Group=mcontreras
+   WorkingDirectory=/home/mcontreras/Forcepoint/Forcepoint-EnterpriseAI
+   EnvironmentFile=/etc/ai-portal/api.env
+   ExecStart=/home/mcontreras/.nvm/versions/node/v20.20.2/bin/node server/index.cjs
+   Restart=on-failure
+   RestartSec=3
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now ai-portal-api
+   curl -s http://127.0.0.1:3000/api/health    # → {"ok":true}
+   ```
+
+5. **Install the nginx site** (replace the shipped welcome page):
+
+   ```nginx
+   # /etc/nginx/conf.d/ai-portal.conf
+   server {
+       listen       80 default_server;
+       listen       [::]:80 default_server;
+       server_name  _;
+
+       root  /var/www/ai-portal;
+       index index.html;
+
+       add_header X-Content-Type-Options "nosniff" always;
+       add_header X-Frame-Options        "SAMEORIGIN" always;
+       add_header X-XSS-Protection       "1; mode=block" always;
+       add_header Referrer-Policy        "strict-origin-when-cross-origin" always;
+       add_header Permissions-Policy     "geolocation=(), microphone=(), camera=()" always;
+
+       location /api/ {
+           proxy_pass         http://127.0.0.1:3000/api/;
+           proxy_http_version 1.1;
+           proxy_set_header   Host              $host;
+           proxy_set_header   X-Real-IP         $remote_addr;
+           proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+           proxy_set_header   X-Forwarded-Proto $scheme;
+           proxy_read_timeout 120s;
+       }
+
+       location /assets/ {
+           try_files $uri =404;
+           access_log off;
+           expires 30d;
+           add_header Cache-Control "public, immutable";
+       }
+
+       location / {
+           try_files $uri $uri/ /index.html;
+       }
+   }
+   ```
+
+   Comment out the default `server { ... }` block inside `/etc/nginx/nginx.conf` (the Oracle
+   welcome page) so this site becomes the only listener on port 80, then:
+
+   ```bash
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+6. **Open port 80 in firewalld:**
+
+   ```bash
+   sudo firewall-cmd --add-port=80/tcp --permanent
+   sudo firewall-cmd --reload
+   ```
+
+7. **Smoke-test from another VPN client:**
+
+   ```bash
+   curl -sI http://10.23.80.28/                       # 200 OK, text/html
+   curl -s  http://10.23.80.28/api/health             # {"ok":true}
+   curl -s  -X POST http://10.23.80.28/api/ask \
+        -H 'Content-Type: application/json' \
+        -d '{"message":"hi"}'                         # requires ANTHROPIC_API_KEY
+   ```
+
+### Day-to-day operations
+
+**Redeploy after frontend changes:**
+
+```bash
+export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
+npm run build
+sudo rsync -a --delete dist/ /var/www/ai-portal/
+```
+
+No nginx reload needed for content-only changes.
+
+**Restart the API (after editing `/etc/ai-portal/api.env` or `server/index.cjs`):**
+
+```bash
+sudo systemctl restart ai-portal-api
+sudo journalctl -u ai-portal-api -f       # tail logs
+```
+
+**Set the Anthropic key:**
+
+```bash
+sudo nano /etc/ai-portal/api.env          # set ANTHROPIC_API_KEY=...
+sudo systemctl restart ai-portal-api
+```
+
+### Caveats
+
+- HTTP only. For TLS, add a `listen 443 ssl` block with a cert from your internal CA.
+- No Entra auth; rely on VPN. If you need auth, prefer Azure SWA over self-host.
+- The DLP `TODO` hooks in `api/ask/index.js` apply identically in self-host — wire them
+  before any wider rollout.
+
 ## Security and Governance Notes
 
 - Never commit API keys, PATs, or client secrets.
