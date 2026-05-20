@@ -405,7 +405,7 @@
 .ev-cal {
   padding: var(--space-4);
   position: sticky;
-  top: calc(var(--topbar-h) + var(--space-5));
+  top: var(--space-5);
 }
 .ev-cal-head {
   display: flex;

@@ -1,21 +1,26 @@
-/* Footer — sits below main content. */
+/* Site Footer — slim navy band at the bottom of the page.
+   Ported from the Forcepoint AI-Portal canonical design. */
 
 .site-footer {
-  border-top: 1px solid var(--border-subtle);
-  padding: var(--space-5) 0 0;
+  background: var(--navy);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: var(--fs-11);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   margin-top: var(--space-9);
-  font-size: var(--fs-12);
-  color: var(--text-tertiary);
 }
 .footer-inner {
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: 0 var(--space-7);
+  padding: 14px var(--space-7);
   display: flex;
   gap: var(--space-5);
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
 }
-.site-footer a       { color: var(--text-secondary); }
-.site-footer a:hover { color: var(--text-primary); }
+.site-footer a       { color: rgba(255, 255, 255, 0.55); text-decoration: none; }
+.site-footer a:hover { color: #fff; text-decoration: underline; }
+
+@media (max-width: 720px) {
+  .footer-inner { padding: 14px var(--space-4); }
+}

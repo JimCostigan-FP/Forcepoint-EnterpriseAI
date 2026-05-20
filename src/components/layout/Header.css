@@ -1,0 +1,183 @@
+/* Site Header — full-width navy band with logo bar, hero, and tab nav.
+   Ported from the Forcepoint AI-Portal canonical design.
+
+   NOTE: classes here are `site-*` prefixed so they don't collide with
+   per-section classes (e.g. HomeSection also defines .hero). */
+
+.site-header {
+  background: var(--navy);
+  color: #fff;
+}
+
+/* ── Top bar: logo + nav links ─────────────────────────── */
+.header-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-7);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.site-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.site-logo-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--teal-mid);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--fs-13);
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.site-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+.site-logo-title {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.005em;
+}
+.site-logo-sub {
+  font-size: var(--fs-11);
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-shrink: 0;
+}
+.header-nav a {
+  font-size: var(--fs-12);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.01em;
+  transition: color var(--dur-1) var(--ease);
+  text-decoration: none;
+}
+.header-nav a:hover { color: #fff; text-decoration: none; }
+
+/* ── Hero ──────────────────────────────────────────────── */
+.site-hero {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-7) var(--space-7);
+}
+.site-hero-eyebrow {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--teal-light);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-3);
+}
+.site-hero-headline {
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-4);
+}
+.site-hero-body {
+  font-size: var(--fs-15);
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.55;
+  max-width: 640px;
+  margin-bottom: var(--space-5);
+}
+.site-hero-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.site-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  background: var(--teal-mid);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-13);
+  font-weight: 500;
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.site-hero-cta:hover { background: var(--teal); color: #fff; text-decoration: none; }
+.site-hero-cta-ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.85);
+}
+.site-hero-cta-ghost:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+
+/* ── Tab nav (sticks below hero) ───────────────────────── */
+.tab-nav {
+  background: var(--navy-mid);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.tab-nav::-webkit-scrollbar { display: none; }
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: var(--fs-12);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 12px 18px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.tab:hover { color: rgba(255, 255, 255, 0.9); }
+.tab.active {
+  color: #fff;
+  border-bottom-color: var(--teal-light);
+  font-weight: 500;
+}
+.tab:focus-visible {
+  outline: 2px solid var(--teal-light);
+  outline-offset: -2px;
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .header-inner { padding: var(--space-3) var(--space-5); }
+  .site-hero    { padding: var(--space-7) var(--space-5) var(--space-6); }
+}
+
+@media (max-width: 720px) {
+  .header-inner {
+    padding: var(--space-3) var(--space-4);
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .header-nav    { gap: var(--space-4); }
+  .site-hero     { padding: var(--space-6) var(--space-4) var(--space-5); }
+  .site-logo-sub { display: none; }
+  .tab           { padding: 10px 14px; }
+}
