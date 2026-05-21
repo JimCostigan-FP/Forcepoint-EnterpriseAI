@@ -139,7 +139,7 @@ export default function EventsSection({ active, onAskQuick }) {
         <div className="section-header-actions">
           <button
             className="btn btn-primary"
-            onClick={() => onAskQuick('I want to propose a brown bag session on AI for the Forcepoint AI Enablement calendar. What information do I need to provide?')}
+            onClick={() => onAskQuick('I want to propose a brown bag session on AI for the Forcepoint Enterprise AI Portal calendar. What information do I need to provide?')}
           >
             <PlusIcon size={14} />
             Propose a session

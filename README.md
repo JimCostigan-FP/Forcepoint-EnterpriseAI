@@ -1,6 +1,6 @@
-# Forcepoint AI Enablement Portal
+# Forcepoint Enterprise AI Portal
 
-The Forcepoint AI Enablement Portal is an internal web application that centralizes AI guidance, governance, and adoption workflows for Forcepoint teams. It combines curated enablement content with secure assistant access and skill lifecycle tooling in one authenticated experience.
+The Forcepoint Enterprise AI Portal is an internal web application that centralizes AI guidance, governance, and adoption workflows for Forcepoint teams. It combines curated enablement content with secure assistant access and skill lifecycle tooling in one authenticated experience.
 
 ## Project Purpose
 
