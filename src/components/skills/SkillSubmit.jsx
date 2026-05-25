@@ -8,10 +8,15 @@ import {
 } from '../ui/icons.jsx'
 import './skills.css'
 
+// Defaults target Forcepoint's GitHub Enterprise (BTS/EAI-claude-skills).
+// Override any field via VITE_GITHUB_* in .env when running against a different
+// host or repo (e.g. local fork on github.com).
 const GITHUB_CONFIG = {
   PAT:   import.meta.env.VITE_GITHUB_PAT,
-  OWNER: 'star-dust9023',
-  REPO:  'fp-enterprise-skills',
+  HOST:  import.meta.env.VITE_GITHUB_HOST  || 'https://github.cicd.cloud.fpdev.io',
+  API:   import.meta.env.VITE_GITHUB_API   || 'https://github.cicd.cloud.fpdev.io/api/v3',
+  OWNER: import.meta.env.VITE_GITHUB_OWNER || 'BTS',
+  REPO:  import.meta.env.VITE_GITHUB_REPO  || 'EAI-claude-skills',
 }
 
 const PIPELINE_STEPS = [
@@ -20,7 +25,7 @@ const PIPELINE_STEPS = [
   { id: 2, Icon: LockIcon,      label: 'DLP review',            detail: 'No regulated data (PII, PHI, proprietary) embedded in skill content.' },
   { id: 3, Icon: DocCheckIcon,  label: 'Template compliance',   detail: 'manifest.json, README.md, and {skill-name}.md present and valid.' },
   { id: 4, Icon: WrenchIcon,    label: 'Engineering review',    detail: 'Skills Engineering — technical review, trust-tier assignment, pilot planning.' },
-  { id: 5, Icon: BranchIcon,    label: 'GitHub PR queue',       detail: 'Pull request opened in fp-enterprise-skills for IT review and merge.' },
+  { id: 5, Icon: BranchIcon,    label: 'GitHub PR queue',       detail: 'Pull request opened in EAI-claude-skills for IT review and merge.' },
 ]
 
 // ── PIPELINE STUBS — replace bodies with real service calls ──
@@ -39,7 +44,7 @@ const pause = ms => new Promise(r => setTimeout(r, ms))
 
 // ── GITHUB PUSH — uploads all three files from inventory ──
 async function pushInventoryToGitHub(skillName, version, inventory, committer, intent) {
-  const apiBase = `https://api.github.com/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}`
+  const apiBase = `${GITHUB_CONFIG.API}/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}`
   const branch  = `skill/${skillName}/v${version}`
   const headers = {
     'Authorization':        `Bearer ${GITHUB_CONFIG.PAT}`,
@@ -704,7 +709,7 @@ export default function SkillSubmit({ open, onOpenChange }) {
                   Files are committed to <code className="ss-code">skills/{sName || '{name}'}/v{version}/</code>{' '}
                   on branch <code className="ss-code">skill/{sName || '{name}'}/v{version}</code>.
                   Reviewed within 3 business days. See{' '}
-                  <a href="https://github.com/star-dust9023/fp-enterprise-skills/blob/main/CONTRIBUTING.md" target="_blank" rel="noreferrer">
+                  <a href={`${GITHUB_CONFIG.HOST}/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer">
                     CONTRIBUTING.md
                   </a>.
                 </span>

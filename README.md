@@ -480,6 +480,30 @@ sudo nano /etc/ai-portal/api.env          # set ANTHROPIC_API_KEY=...
 sudo systemctl restart ai-portal-api
 ```
 
+**Stop / kill running processes:**
+
+```bash
+# Identify what's listening on the common ports
+ss -tlnp 2>/dev/null | grep -E ':(3000|5173|80)\s'
+
+# Vite dev server (npm run dev on :5173)
+pkill -f vite
+# or by PID — find with `ss -tlnp | grep :5173`, then:
+kill <PID>                                # graceful; add -9 only if it refuses
+
+# Deployed API on :3000 — managed by systemd, do NOT `kill` directly
+sudo systemctl stop ai-portal-api         # one-time stop
+sudo systemctl disable --now ai-portal-api  # stop AND prevent restart on boot
+sudo systemctl status ai-portal-api       # verify state
+
+# Nginx (port 80)
+sudo systemctl stop nginx
+
+# Any background job in your current shell
+jobs                                       # list
+kill %1                                    # kill job 1
+```
+
 ### Caveats
 
 - HTTP only. For TLS, add a `listen 443 ssl` block with a cert from your internal CA.
