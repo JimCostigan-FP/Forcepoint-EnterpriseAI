@@ -1,6 +1,6 @@
-# Forcepoint AI Enablement Portal
+# Forcepoint Enterprise AI
 
-The Forcepoint AI Enablement Portal is an internal web application that centralizes AI guidance, governance, and adoption workflows for Forcepoint teams. It combines curated enablement content with secure assistant access and skill lifecycle tooling in one authenticated experience.
+The Forcepoint Enterprise AI is an internal web application that centralizes AI guidance, governance, and adoption workflows for Forcepoint teams. It combines curated enablement content with secure assistant access and skill lifecycle tooling in one authenticated experience.
 
 ## Project Purpose
 
@@ -112,7 +112,7 @@ Forcepoint-EnterpriseAI/
 ├── staticwebapp.config.json             # Auth, headers, routing, API runtime
 ├── vite.config.js                       # Vite + React plugin config
 ├── package.json                         # Scripts and dependencies
-├── .env / .env.example                  # VITE_GITHUB_PAT for SkillSubmit (local dev)
+├── .env / .env.example                  # Optional VITE_GITHUB_* host/repo overrides for SkillSubmit
 └── README.md
 ```
 
@@ -267,11 +267,11 @@ async function askAI(question) {
 
 ### Skill submission integration
 
-`src/components/skills/SkillSubmit.jsx` uses:
+`src/components/skills/SkillSubmit.jsx` collects a personal access token from each submitter at submit time, calls `GET /user` and `GET /user/emails` against the configured GitHub host, and refuses to push unless one of the token's verified emails matches the Forcepoint email entered in the form. The PAT lives in component state for the duration of the submission only — it is never read from `.env`, never bundled, and never persisted.
 
-- `VITE_GITHUB_PAT`
+Optional overrides for the target host/repo (defaults target Forcepoint GHE — `BTS/EAI-claude-skills`):
 
-This token is consumed in-browser for GitHub content + PR operations. Keep scope minimal, treat as sensitive, and prefer moving this flow server-side for long-term hardening.
+- `VITE_GITHUB_HOST`, `VITE_GITHUB_API`, `VITE_GITHUB_OWNER`, `VITE_GITHUB_REPO`
 
 ### Proxy environment variables
 
@@ -538,8 +538,8 @@ To update portal content, edit `src/data/portal.js`, then rebuild and redeploy.
 
 - Owner: IT Enterprise AI Team (`ITEnterpriseAIteam@forcepoint.com`)
 - Program manager: Jim Costigan (`jim.costigan@forcepoint.com`)
-- Jira: [AI-110 — Build Dedicated AI Enablement Portal for Forcepoint](https://forcepoint.atlassian.net/browse/AI-110)
-- Confluence: [AI Enablement Portal](https://forcepoint.atlassian.net/wiki/spaces/AI/pages/5009637449)
+- Jira: [AI-110 — Build Dedicated Forcepoint Enterprise AI](https://forcepoint.atlassian.net/browse/AI-110)
+- Confluence: [Forcepoint Enterprise AI](https://forcepoint.atlassian.net/wiki/spaces/AI/pages/5009637449)
 - Architecture reference: [Deployment Architecture](https://forcepoint.atlassian.net/wiki/spaces/AI/pages/5011832833)
 
 ## Recommended Next Hardening Steps
@@ -566,8 +566,7 @@ The following items are recommended for the next delivery phases.
 
 ### Phase 3: Submission workflow hardening
 
-- Move GitHub write/PR operations from browser to backend API.
-- Replace `VITE_GITHUB_PAT` usage with managed identity or secure service credentials.
+- Move GitHub write/PR operations behind a server-side proxy (Azure Function + Key Vault) so individual PATs are no longer required for submission. Submitters without a GitHub Enterprise account are blocked from the current UI-PAT flow.
 - Add approval/validation gates for skill metadata before PR creation.
 
 ### Phase 4: Operations and observability
