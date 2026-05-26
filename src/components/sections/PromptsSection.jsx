@@ -13,7 +13,7 @@ export default function PromptsSection({ active, onAskQuick }) {
         <div className="section-header-actions">
           <button
             className="btn btn-primary"
-            onClick={() => onAskQuick('I want to submit a prompt to the Forcepoint AI Enablement portal showcase. Help me format it correctly.')}
+            onClick={() => onAskQuick('I want to submit a prompt to the Forcepoint Enterprise AI prompt showcase. Help me format it correctly.')}
           >
             <PlusIcon size={14} />
             Submit a prompt

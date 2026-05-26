@@ -7,7 +7,7 @@ export default function Header({ activeSection, tabs, onShowSection, onAskQuick 
         <div className="site-logo">
           <div className="site-logo-mark">FP</div>
           <div className="site-logo-text">
-            <span className="site-logo-title">Forcepoint AI Enablement</span>
+            <span className="site-logo-title">Forcepoint Enterprise AI</span>
             <span className="site-logo-sub">IT Enterprise AI team · CIO Organization</span>
           </div>
         </div>
