@@ -8,10 +8,15 @@ import {
 } from '../ui/icons.jsx'
 import './skills.css'
 
+// Defaults target Forcepoint's GitHub Enterprise (BTS/EAI-claude-skills).
+// Override host/owner/repo via VITE_GITHUB_* in .env. The PAT is collected
+// per-submission in the UI and validated against the submitter's email —
+// never bundled, never persisted.
 const GITHUB_CONFIG = {
-  PAT:   import.meta.env.VITE_GITHUB_PAT,
-  OWNER: 'star-dust9023',
-  REPO:  'fp-enterprise-skills',
+  HOST:  import.meta.env.VITE_GITHUB_HOST  || 'https://github.cicd.cloud.fpdev.io',
+  API:   import.meta.env.VITE_GITHUB_API   || 'https://github.cicd.cloud.fpdev.io/api/v3',
+  OWNER: import.meta.env.VITE_GITHUB_OWNER || 'BTS',
+  REPO:  import.meta.env.VITE_GITHUB_REPO  || 'EAI-claude-skills',
 }
 
 const PIPELINE_STEPS = [
@@ -20,7 +25,7 @@ const PIPELINE_STEPS = [
   { id: 2, Icon: LockIcon,      label: 'DLP review',            detail: 'No regulated data (PII, PHI, proprietary) embedded in skill content.' },
   { id: 3, Icon: DocCheckIcon,  label: 'Template compliance',   detail: 'manifest.json, README.md, and {skill-name}.md present and valid.' },
   { id: 4, Icon: WrenchIcon,    label: 'Engineering review',    detail: 'Skills Engineering — technical review, trust-tier assignment, pilot planning.' },
-  { id: 5, Icon: BranchIcon,    label: 'GitHub PR queue',       detail: 'Pull request opened in fp-enterprise-skills for IT review and merge.' },
+  { id: 5, Icon: BranchIcon,    label: 'GitHub PR queue',       detail: 'Pull request opened in EAI-claude-skills for IT review and merge.' },
 ]
 
 // ── PIPELINE STUBS — replace bodies with real service calls ──
@@ -37,12 +42,47 @@ async function checkDocQuality(inventory, skillName)  {
 
 const pause = ms => new Promise(r => setTimeout(r, ms))
 
+// ── GITHUB IDENTITY CHECK — confirms the PAT belongs to the submitter ──
+// Calls GET /user and GET /user/emails; requires the PAT to have `user:email`
+// scope. Falls back to user.email (profile) when /user/emails is forbidden.
+async function verifyGitHubIdentity(pat, formEmail) {
+  const headers = {
+    'Authorization':        `Bearer ${pat}`,
+    'Accept':               'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  }
+  try {
+    const userRes = await fetch(`${GITHUB_CONFIG.API}/user`, { headers })
+    if (userRes.status === 401) return { ok: false, error: 'GitHub token is invalid or expired.' }
+    if (!userRes.ok)            return { ok: false, error: `GitHub auth check failed (HTTP ${userRes.status}).` }
+    const user = await userRes.json()
+
+    const emailRes = await fetch(`${GITHUB_CONFIG.API}/user/emails`, { headers })
+    let verifiedEmails = []
+    if (emailRes.ok) {
+      const list = await emailRes.json()
+      verifiedEmails = list.filter(e => e.verified).map(e => e.email.toLowerCase())
+    } else if (user.email) {
+      verifiedEmails = [user.email.toLowerCase()]
+    } else {
+      return { ok: false, error: 'Token is missing the user:email scope. Mint a new PAT with repo + user:email scopes.' }
+    }
+
+    if (!verifiedEmails.includes(formEmail.toLowerCase())) {
+      return { ok: false, error: `Token belongs to ${user.login}, whose verified emails do not include ${formEmail}. Use a token from the GitHub account tied to your Forcepoint email.` }
+    }
+    return { ok: true, login: user.login }
+  } catch (e) {
+    return { ok: false, error: e.message || 'Network error reaching GitHub.' }
+  }
+}
+
 // ── GITHUB PUSH — uploads all three files from inventory ──
-async function pushInventoryToGitHub(skillName, version, inventory, committer, intent) {
-  const apiBase = `https://api.github.com/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}`
+async function pushInventoryToGitHub(skillName, version, inventory, committer, intent, pat) {
+  const apiBase = `${GITHUB_CONFIG.API}/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}`
   const branch  = `skill/${skillName}/v${version}`
   const headers = {
-    'Authorization':        `Bearer ${GITHUB_CONFIG.PAT}`,
+    'Authorization':        `Bearer ${pat}`,
     'Accept':               'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
     'Content-Type':         'application/json',
@@ -93,7 +133,7 @@ async function pushInventoryToGitHub(skillName, version, inventory, committer, i
       method: 'POST', headers,
       body: JSON.stringify({
         title: `Skill Submission: ${skillName} v${version}`,
-        body:  `## Skill Submission: \`${skillName}\` v${version}\n\n**Submitter:** ${committer}\n\n### What does this skill do?\n${intent}\n\n---\n_Submitted via the Forcepoint Enterprise AI Portal. Files at \`skills/${skillName}/v${version}/\`._`,
+        body:  `## Skill Submission: \`${skillName}\` v${version}\n\n**Submitter:** ${committer}\n\n### What does this skill do?\n${intent}\n\n---\n_Submitted via the Forcepoint Enterprise AI. Files at \`skills/${skillName}/v${version}/\`._`,
         head: branch, base: 'main',
       }),
     })
@@ -368,6 +408,7 @@ export default function SkillSubmit({ open, onOpenChange }) {
   const [name,      setName]      = useState('')
   const [email,     setEmail]     = useState('')
   const [dept,      setDept]      = useState('')
+  const [pat,       setPat]       = useState('')
   const [intent,    setIntent]    = useState('')
   const [skillName, setSkillName] = useState('')
   const [version,   setVersion]   = useState('1.0')
@@ -448,6 +489,7 @@ export default function SkillSubmit({ open, onOpenChange }) {
     if (!name.trim())                                          { setValMsg('Full name is required.'); return false }
     if (!email.trim() || !email.includes('@forcepoint.com'))   { setValMsg('A valid @forcepoint.com email is required.'); return false }
     if (!dept)                                                 { setValMsg('Please select your department.'); return false }
+    if (!pat.trim())                                           { setValMsg('GitHub personal access token is required.'); return false }
     if (!intent.trim() || intent.trim().length < 20)           { setValMsg('Please describe what the skill does (at least 20 characters).'); return false }
     if (!skillName.trim())                                     { setValMsg('Skill name is required.'); return false }
     if (!/^[a-z0-9-]+$/.test(skillName.trim()))                { setValMsg('Skill name must be lowercase letters, numbers, and hyphens only.'); return false }
@@ -461,6 +503,11 @@ export default function SkillSubmit({ open, onOpenChange }) {
 
   const submit = async () => {
     if (!validateForm()) return
+    setValMsg('Verifying your GitHub identity…')
+    const identity = await verifyGitHubIdentity(pat.trim(), email.trim())
+    if (!identity.ok) { setValMsg(identity.error); return }
+    setValMsg(null)
+
     const ref   = 'SKL-' + Date.now().toString(36).toUpperCase().slice(-6)
     const sName = skillName.trim()
     const sVer  = version.trim()
@@ -496,7 +543,7 @@ export default function SkillSubmit({ open, onOpenChange }) {
     setStep(4, 'running', 'assigned')
     setStep(5, 'running', 'uploading…')
     const committer = `${name} (${dept}) <${email}>`
-    const result    = await pushInventoryToGitHub(sName, sVer, inventory, committer, intent.trim())
+    const result    = await pushInventoryToGitHub(sName, sVer, inventory, committer, intent.trim(), pat.trim())
 
     if (!result.ok) {
       setSubmitted(false)
@@ -590,6 +637,31 @@ export default function SkillSubmit({ open, onOpenChange }) {
                       <option key={d}>{d}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+              <div className="sb-field">
+                <label className="sb-label">
+                  GitHub personal access token <span className="sb-opt">used once per submission, not stored</span>
+                </label>
+                <input
+                  type="password"
+                  className="sb-input"
+                  placeholder="Paste your Enterprise GitHub PAT"
+                  value={pat}
+                  onChange={e => setPat(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <div className="sb-hint">
+                  Required scopes: <code className="ss-code">repo</code> and <code className="ss-code">user:email</code>.{' '}
+                  <a
+                    href={`${GITHUB_CONFIG.HOST}/settings/tokens/new?scopes=repo,user:email&description=Forcepoint%20Enterprise%20AI%20-%20Skill%20Submit`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Create one
+                  </a>{' '}
+                  — the token is validated against your Forcepoint email before any commit is made, and is never stored or sent off-host.
                 </div>
               </div>
               <div className="sb-field">
@@ -704,7 +776,7 @@ export default function SkillSubmit({ open, onOpenChange }) {
                   Files are committed to <code className="ss-code">skills/{sName || '{name}'}/v{version}/</code>{' '}
                   on branch <code className="ss-code">skill/{sName || '{name}'}/v{version}</code>.
                   Reviewed within 3 business days. See{' '}
-                  <a href="https://github.com/star-dust9023/fp-enterprise-skills/blob/main/CONTRIBUTING.md" target="_blank" rel="noreferrer">
+                  <a href={`${GITHUB_CONFIG.HOST}/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer">
                     CONTRIBUTING.md
                   </a>.
                 </span>

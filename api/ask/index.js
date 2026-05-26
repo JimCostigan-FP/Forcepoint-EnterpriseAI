@@ -15,7 +15,7 @@
  * Environment variables (set in Azure Function App settings / Key Vault references):
  *   ANTHROPIC_API_KEY   — your Anthropic API key (reference from Key Vault)
  *   ANTHROPIC_MODEL     — model ID (default: claude-sonnet-4-20250514)
- *   ALLOWED_ORIGINS     — comma-separated allowed CORS origins (e.g. https://ai-enablement.forcepoint.com)
+ *   ALLOWED_ORIGINS     — comma-separated allowed CORS origins (e.g. https://enterprise-ai.forcepoint.com)
  */
 
 const https = require("https");
