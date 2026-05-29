@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
+import { useIdentity } from './identity.js'
 
 const ME_ENDPOINT        = '/api/auth/me'
 const DEV_LOGIN_ENDPOINT = '/auth/dev-login'
@@ -18,15 +19,35 @@ const DEV_LOGIN_ENDPOINT = '/auth/dev-login'
 export const LOGIN_URL  = '/auth/login'
 export const LOGOUT_URL = '/auth/logout'
 
+// Local-dev escape hatch. Set VITE_AUTH_BYPASS=true in .env.local to skip
+// the SSO LoginPage and render as the placeholder identity. Only active in
+// dev builds — Vite strips it from production bundles when the flag is
+// unset at build time. Branch: local-dev.
+const BYPASS_AUTH = import.meta.env.VITE_AUTH_BYPASS === 'true'
+
 export function useCurrentUser() {
-  const [state, setState] = useState({
-    status:   'loading',  // 'loading' | 'authenticated' | 'anonymous' | 'error'
-    user:     null,
-    features: { oktaConfigured: false, devLoginEnabled: false },
-    error:    null,
-  })
+  const identity = useIdentity()
+
+  // Hooks must run in the same order every render, so the bypass folds into
+  // the initial state + skips side effects rather than early-returning.
+  const [state, setState] = useState(() => (
+    BYPASS_AUTH
+      ? {
+          status:   'authenticated',
+          user:     { name: identity.name, email: identity.email, provider: 'bypass' },
+          features: { oktaConfigured: false, devLoginEnabled: false, authMode: 'bypass' },
+          error:    null,
+        }
+      : {
+          status:   'loading',  // 'loading' | 'authenticated' | 'anonymous' | 'error'
+          user:     null,
+          features: { oktaConfigured: false, devLoginEnabled: false },
+          error:    null,
+        }
+  ))
 
   const refresh = useCallback(async () => {
+    if (BYPASS_AUTH) return
     try {
       const res = await fetch(ME_ENDPOINT, { credentials: 'include' })
       const payload = await res.json().catch(() => ({}))
@@ -48,6 +69,7 @@ export function useCurrentUser() {
   useEffect(() => { refresh() }, [refresh])
 
   const signInAsDev = useCallback(async () => {
+    if (BYPASS_AUTH) return
     const res = await fetch(DEV_LOGIN_ENDPOINT, {
       method:      'POST',
       credentials: 'include',
