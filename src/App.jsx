@@ -93,6 +93,7 @@ export default function App() {
         <SkillsSection
           active={activeSection === 'skills'}
           onAskQuick={askQuick}
+          onShowSection={showSection}
           query={globalQuery}
           onQueryChange={setGlobalQuery}
           submitPrefill={creatorPrefill}

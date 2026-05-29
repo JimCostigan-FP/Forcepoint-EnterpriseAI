@@ -84,41 +84,6 @@ export default function HomeSection({ active, onShowSection, onAskQuick, user })
   return (
     <section className={`portal-section${active ? ' active' : ''}`}>
 
-      {/* ── Skill creator feature tile ─────────────────────────
-          Primary entry to /skill-creator. Sits above the Ask AI
-          hero by design — the brief positions skill authoring as
-          the headline action on the landing page. */}
-      <div className="hero-feature">
-        <div className="hero-feature-body">
-          <span className="hero-feature-eyebrow">
-            <SparkleIcon size={12} />
-            New · Build a skill
-          </span>
-          <div className="hero-feature-title">
-            Shape an idea into an enterprise skill — without leaving Iris.
-          </div>
-          <div className="hero-feature-desc">
-            A guided refiner asks the open-ended questions, you preview the SKILL.md, fire a sample prompt, see the review tier, and submit. One page, one path.
-          </div>
-          <div className="hero-feature-bullets">
-            <span className="hero-feature-bullet">No round-trip through Claude</span>
-            <span className="hero-feature-bullet">Test before submit</span>
-            <span className="hero-feature-bullet">Tier &amp; SLA shown at creation</span>
-          </div>
-        </div>
-        <div className="hero-feature-actions">
-          <button
-            type="button"
-            className="btn btn-primary btn-lg"
-            onClick={() => onShowSection('skill-creator')}
-          >
-            <SparkleIcon size={14} />
-            Open skill creator
-            <ArrowRight size={14} />
-          </button>
-        </div>
-      </div>
-
       {/* ── Compact hero ───────────────────────────────────── */}
       <div className="hero">
         <div className="hero-row">
