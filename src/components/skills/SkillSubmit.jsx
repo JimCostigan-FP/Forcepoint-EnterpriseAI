@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from 'react'
+import { useEffect, useRef, useState, Fragment } from 'react'
 import JSZip from 'jszip'
 import {
   ShieldIcon, ScalesIcon, LockIcon, DocCheckIcon, WrenchIcon, BranchIcon,
@@ -452,7 +452,7 @@ function PipelineNote({ kind, children }) {
 }
 
 // ── MAIN COMPONENT ─────────────────────────────────────────
-export default function SkillSubmit({ open, onOpenChange, user }) {
+export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillConsumed, user }) {
   const fileInputRef = useRef(null)
 
   // Support both controlled (open + onOpenChange from parent) and uncontrolled use.
@@ -496,12 +496,33 @@ export default function SkillSubmit({ open, onOpenChange, user }) {
   const [showReadme,   setShowReadme]   = useState(false)
 
   const [valMsg,         setValMsg]         = useState(null)
+  const [infoMsg,        setInfoMsg]        = useState(null)
   const [submitted,      setSubmitted]      = useState(false)
   const [refNum,         setRefNum]         = useState('')
   const [pipeSteps,      setPipeSteps]      = useState(PIPELINE_STEPS.map(() => ({ state: 'queued', label: 'queued' })))
   const [pipeNotes,      setPipeNotes]      = useState([])
   const [submitDisabled, setSubmitDisabled] = useState(false)
   const [prResult,       setPrResult]       = useState(null)
+
+  // Apply a draft handed off from the skill creator. Fires once per payload —
+  // the parent clears the prefill via onPrefillConsumed so this effect doesn't
+  // re-overwrite the form when the user edits a field. PAT is intentionally
+  // not prefilled: it's per-submission and never persisted.
+  useEffect(() => {
+    if (!prefill) return
+    if (prefill.submitter) {
+      if (prefill.submitter.name)  setName(prefill.submitter.name)
+      if (prefill.submitter.email) setEmail(prefill.submitter.email)
+      if (prefill.submitter.dept)  setDept(prefill.submitter.dept)
+    }
+    if (prefill.intent)    setIntent(prefill.intent)
+    if (prefill.name)      setSkillName(prefill.name)
+    if (prefill.version)   setVersion(prefill.version)
+    if (prefill.inventory) setInventory(prev => ({ ...prev, ...prefill.inventory }))
+    setValMsg(null)
+    setInfoMsg('Draft loaded from the skill creator. Add your GitHub token and submit.')
+    onPrefillConsumed?.()
+  }, [prefill, onPrefillConsumed])
 
   const setStep = (idx, state, label) =>
     setPipeSteps(steps => steps.map((s, i) => i === idx ? { state, label } : s))
@@ -577,6 +598,7 @@ export default function SkillSubmit({ open, onOpenChange, user }) {
   }
 
   const submit = async () => {
+    setInfoMsg(null)
     if (!validateForm()) return
     setValMsg('Verifying your GitHub identity…')
     const identity = await verifyGitHubIdentity(pat.trim(), email.trim())
@@ -654,6 +676,7 @@ export default function SkillSubmit({ open, onOpenChange, user }) {
     setPipeNotes([])
     setPrResult(null)
     setValMsg(null)
+    setInfoMsg(null)
   }
 
   const sName = skillName.trim()
@@ -910,6 +933,7 @@ export default function SkillSubmit({ open, onOpenChange, user }) {
 
             {/* Submit */}
             <div className="ss-actions">
+              {infoMsg && <div className="sb-validation sb-val-ok">{infoMsg}</div>}
               {valMsg && <div className="sb-validation sb-val-error">{valMsg}</div>}
               {prResult ? (
                 <button

@@ -1,6 +1,89 @@
 /* HomeSection — compact hero + dashboard grid (pinned tools, activity,
    AI insight, suggested prompts, upcoming events) + owner strip. */
 
+/* ── Skill creator feature tile ─────────────────────────── */
+.hero-feature {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-5) var(--space-7);
+  margin-bottom: var(--space-4);
+  background:
+    linear-gradient(135deg, var(--tint-teal) 0%, var(--bg-surface) 55%, var(--tint-violet) 130%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  isolation: isolate;
+  flex-wrap: wrap;
+}
+.hero-feature::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(600px 220px at 95% 0%, var(--tint-teal) 0%, transparent 65%);
+  z-index: -1;
+  pointer-events: none;
+}
+.hero-feature-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+.hero-feature-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-11);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--teal);
+  margin-bottom: 2px;
+}
+.hero-feature-title {
+  font-size: var(--fs-20);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  max-width: 720px;
+}
+.hero-feature-desc {
+  font-size: var(--fs-13);
+  color: var(--text-secondary);
+  line-height: 1.55;
+  max-width: 720px;
+}
+.hero-feature-bullets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.hero-feature-bullet {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-11);
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+}
+.hero-feature-actions {
+  flex-shrink: 0;
+}
+@media (max-width: 720px) {
+  .hero-feature { padding: var(--space-4) var(--space-5); border-radius: var(--radius-lg); }
+  .hero-feature-title { font-size: var(--fs-17); }
+}
+
 /* ── Hero ───────────────────────────────────────────────── */
 .hero {
   position: relative;

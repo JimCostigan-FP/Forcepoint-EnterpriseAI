@@ -1,14 +1,28 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PORTAL_DATA } from '../../data/portal.js'
 import SkillSubmit from '../skills/SkillSubmit.jsx'
 import SkillBuilder from '../skills/SkillBuilder.jsx'
 import GoSacBuilder from '../skills/GoSacBuilder.jsx'
 import { PlusIcon } from '../ui/icons.jsx'
 
-export default function SkillsSection({ active, onAskQuick, query = '', onQueryChange, user }) {
+export default function SkillsSection({
+  active, onAskQuick, query = '', onQueryChange,
+  submitPrefill, onSubmitPrefillConsumed,
+  user,
+}) {
   const [goSacVisible, setGoSacVisible] = useState(false)
   const [submitOpen,   setSubmitOpen]   = useState(false)
   const submitRef = useRef(null)
+
+  // When the skill creator hands off a draft, open the governance panel and
+  // scroll it into view so the submitter sees the prefilled fields land.
+  useEffect(() => {
+    if (!submitPrefill) return
+    setSubmitOpen(true)
+    requestAnimationFrame(() => {
+      submitRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [submitPrefill])
 
   const filtered = PORTAL_DATA.skills.filter(s => {
     const q = (query || '').trim().toLowerCase()
@@ -85,7 +99,13 @@ export default function SkillsSection({ active, onAskQuick, query = '', onQueryC
       </div>
 
       <div ref={submitRef}>
-        <SkillSubmit open={submitOpen} onOpenChange={setSubmitOpen} user={user} />
+        <SkillSubmit
+          open={submitOpen}
+          onOpenChange={setSubmitOpen}
+          prefill={submitPrefill}
+          onPrefillConsumed={onSubmitPrefillConsumed}
+          user={user}
+        />
       </div>
 
       <SkillBuilder onFirstDownload={() => setGoSacVisible(true)} />

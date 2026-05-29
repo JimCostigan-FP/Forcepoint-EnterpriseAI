@@ -12,6 +12,7 @@ import ArchitectureSection from './components/sections/ArchitectureSection.jsx'
 import SignalSection from './components/sections/SignalSection.jsx'
 import LoginPage from './components/auth/LoginPage.jsx'
 import { useCurrentUser } from './lib/auth.js'
+import SkillCreatorSection from './components/sections/SkillCreatorSection.jsx'
 
 const TABS = [
   { id: 'home',         label: 'Overview' },
@@ -30,10 +31,19 @@ export default function App() {
   const [activeSection, setActiveSection] = useState('home')
   const [globalQuery, setGlobalQuery]     = useState('')
   const [toast, setToast]                 = useState(null)
+  // Prefill payload the skill creator hands to SkillSubmit on submit. Routing
+  // the assembled draft through the existing AI-471 intake keeps a single
+  // submission path — there is no separate creator endpoint.
+  const [creatorPrefill, setCreatorPrefill] = useState(null)
 
   function showSection(id) {
     setActiveSection(id)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function handleCreatorHandoff(payload) {
+    setCreatorPrefill(payload)
+    showSection('skills')
   }
 
   function notify(label) {
@@ -85,6 +95,8 @@ export default function App() {
           onAskQuick={askQuick}
           query={globalQuery}
           onQueryChange={setGlobalQuery}
+          submitPrefill={creatorPrefill}
+          onSubmitPrefillConsumed={() => setCreatorPrefill(null)}
           user={auth.user}
         />
         <PromptsSection      active={activeSection === 'prompts'}      onAskQuick={askQuick} />
@@ -92,6 +104,11 @@ export default function App() {
         <AmbassadorSection   active={activeSection === 'ambassador'}   onAskQuick={askQuick} />
         <ArchitectureSection active={activeSection === 'architecture'} onAskQuick={askQuick} />
         <SignalSection       active={activeSection === 'signal'} />
+        <SkillCreatorSection
+          active={activeSection === 'skill-creator'}
+          onShowSection={showSection}
+          onHandoff={handleCreatorHandoff}
+        />
       </main>
 
       <Footer />
