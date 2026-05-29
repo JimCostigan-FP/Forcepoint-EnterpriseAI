@@ -15,13 +15,16 @@
  */
 
 import { useState } from 'react'
-import { LockIcon, ShieldIcon, ArrowRight, WrenchIcon } from '../ui/icons.jsx'
+import { LockIcon, ShieldIcon, ArrowRight, WrenchIcon, SunIcon, MoonIcon } from '../ui/icons.jsx'
 import { LOGIN_URL } from '../../lib/auth.js'
+import { useTheme } from '../../lib/theme.js'
 import './login.css'
 
 export default function LoginPage({ features, onDevLogin, returnTo = '/' }) {
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState(null)
+  const { theme, toggle: toggleTheme } = useTheme()
+  const nextTheme = theme === 'dark' ? 'light' : 'dark'
 
   const safeReturn = (typeof returnTo === 'string' && returnTo.startsWith('/') && !returnTo.startsWith('//'))
     ? returnTo : '/'
@@ -42,27 +45,28 @@ export default function LoginPage({ features, onDevLogin, returnTo = '/' }) {
 
   return (
     <div className="login-page">
+      <button
+        type="button"
+        className="login-theme-toggle"
+        onClick={toggleTheme}
+        aria-label={`Switch to ${nextTheme} mode`}
+        title={`Switch to ${nextTheme} mode`}
+      >
+        {theme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+      </button>
+
       <div className="login-card">
         <div className="login-brand">
           <img className="login-brand-icon" src="/fp-icon.png" alt="Forcepoint" />
-          <div className="login-brand-text">
-            <div className="login-brand-title">Forcepoint Enterprise AI</div>
-            <div className="login-brand-sub">Iris Skills Portal · sign in to continue</div>
-          </div>
+          <div className="login-brand-title">Forcepoint Enterprise AI</div>
         </div>
 
         <h1 className="login-headline">Sign in</h1>
-        <p className="login-body">
-          Iris uses Forcepoint single sign-on (Okta). Pick the path that fits
-          how you're using the portal today.
-        </p>
 
         <div className="login-options">
-          {/* ── Real Okta SSO ─────────────────────────────────────────────
-              Always clickable so operators can see exactly what /auth/login
-              returns when the SAML cert isn't installed (a diagnostic HTML
-              page from the backend). Once the IdP cert lands, the same
-              click POSTs a real SAMLRequest to Okta. */}
+          {/* Always clickable. With a real SAML cert installed, this kicks
+              off the Okta OIDC redirect. Without, the backend renders a
+              diagnostic page explaining what's missing. */}
           <a className="login-option login-option-primary" href={oktaHref}>
             <div className="login-option-icon"><ShieldIcon size={20} /></div>
             <div className="login-option-text">
@@ -70,16 +74,11 @@ export default function LoginPage({ features, onDevLogin, returnTo = '/' }) {
                 Continue with Forcepoint SSO
                 {!oktaReady && <span className="login-option-pill login-option-pill-pending">pending wiring</span>}
               </div>
-              <div className="login-option-sub">
-                {oktaReady
-                  ? 'Sign in with your Forcepoint Okta account.'
-                  : 'Okta SAML cert is not yet on this server — clicking shows the diagnostic page.'}
-              </div>
             </div>
             <ArrowRight size={16} className="login-option-arrow" />
           </a>
 
-          {/* ── Dev login (testing only) ──────────────────────────────── */}
+          {/* Dev login is hidden in production (IRIS_ALLOW_DEV_LOGIN=0). */}
           {devEnabled && (
             <button
               type="button"
@@ -93,10 +92,6 @@ export default function LoginPage({ features, onDevLogin, returnTo = '/' }) {
                   Continue with dev login
                   <span className="login-option-pill">testing</span>
                 </div>
-                <div className="login-option-sub">
-                  Skip Okta and sign in as the impersonation user. Useful
-                  while we wait on the Okta app credentials.
-                </div>
               </div>
               <ArrowRight size={16} className="login-option-arrow" />
             </button>
@@ -105,11 +100,7 @@ export default function LoginPage({ features, onDevLogin, returnTo = '/' }) {
           {!oktaReady && !devEnabled && (
             <div className="login-locked">
               <LockIcon size={16} />
-              <span>
-                No sign-in method is currently enabled on this server. Ask
-                the platform team to populate <code>SAML_IDP_CERT</code> or
-                set <code>IRIS_ALLOW_DEV_LOGIN=1</code>.
-              </span>
+              <span>No sign-in method is currently enabled on this server.</span>
             </div>
           )}
         </div>
@@ -117,8 +108,7 @@ export default function LoginPage({ features, onDevLogin, returnTo = '/' }) {
         {error && <div className="login-error">{error}</div>}
 
         <div className="login-footnote">
-          By signing in you accept the Forcepoint AI Policy (FP-IS-AI). Issues?
-          Email <a href="mailto:ITEnterpriseAIteam@forcepoint.com">ITEnterpriseAIteam@forcepoint.com</a>.
+          Forcepoint AI Policy (FP-IS-AI) applies. Need help? <a href="mailto:ITEnterpriseAIteam@forcepoint.com">Contact IT Enterprise AI</a>
         </div>
       </div>
     </div>

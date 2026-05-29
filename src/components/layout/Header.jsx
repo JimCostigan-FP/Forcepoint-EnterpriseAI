@@ -1,6 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
 import { LOGOUT_URL } from '../../lib/auth.js'
+import { useTheme } from '../../lib/theme.js'
+import { SunIcon, MoonIcon } from '../ui/icons.jsx'
 import './Header.css'
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme()
+  const next = theme === 'dark' ? 'light' : 'dark'
+  return (
+    <button
+      type="button"
+      className="site-theme-toggle"
+      onClick={toggle}
+      aria-label={`Switch to ${next} mode`}
+      title={`Switch to ${next} mode`}
+    >
+      {theme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+    </button>
+  )
+}
 
 function initialsOf(nameOrEmail) {
   if (!nameOrEmail) return '?'
@@ -87,6 +105,7 @@ export default function Header({ activeSection, tabs, onShowSection, onAskQuick,
           <a href="#" onClick={e => { e.preventDefault(); onAskQuick('How do I get started with the AI Ambassador program?') }}>Ambassador</a>
           <a href="#" onClick={e => { e.preventDefault(); onAskQuick('What is the Forcepoint AI governance policy?') }}>Policy</a>
 
+          <ThemeToggle />
           <UserMenu user={user} />
         </nav>
       </div>

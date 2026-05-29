@@ -195,3 +195,34 @@
   background: var(--tint-amber, #fef3c7);
   color: #b45309;
 }
+
+/* Day/night toggle on the login page — sits in the top-right corner so
+   the preference is reachable before sign-in. */
+.login-theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: 0 4px 12px -8px rgba(15, 23, 42, 0.25);
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.login-theme-toggle:hover {
+  border-color: var(--teal-mid, #0d9b78);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+.login-theme-toggle:focus-visible {
+  outline: 2px solid var(--teal-mid, #0d9b78);
+  outline-offset: 2px;
+}

@@ -68,6 +68,13 @@
   --bg-muted:       #ECEFF3;
   --bg-inverse:     #0B1422;
 
+  /* Aliases — older components were written against these names. Aliasing
+     to the canonical surface tokens means they automatically pick up the
+     dark palette via cascade (no per-rule [data-theme="dark"] needed). */
+  --bg-page:        var(--bg-app);
+  --bg-card:        var(--bg-surface);
+  --surface-card:   var(--bg-surface);
+
   /* Subtle accent surfaces (AI-Portal canonical) */
   --teal-pale:      #E1F5EE;
   --amber-pale:     #FAEEDA;
