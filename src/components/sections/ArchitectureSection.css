@@ -1,0 +1,92 @@
+/* Architecture & IT — paired document hero tiles at the top of the section.
+   Visual language mirrors the home page hero-feature so the two surfaces
+   feel like one product, but the layout is a 2-up grid since the heroes
+   here are reference-doc links, not a single CTA. */
+
+.arch-doc-heroes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.arch-doc-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+  background:
+    linear-gradient(135deg, var(--tint-teal) 0%, var(--bg-surface) 60%, var(--tint-violet) 130%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  isolation: isolate;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+.arch-doc-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(500px 200px at 100% 0%, var(--tint-teal) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+.arch-doc-hero:hover {
+  transform: translateY(-1px);
+  border-color: var(--teal-mid);
+  box-shadow: 0 4px 16px -8px rgba(0, 0, 0, 0.08);
+}
+.arch-doc-hero:focus-visible {
+  outline: 2px solid var(--teal-mid);
+  outline-offset: 2px;
+}
+
+.arch-doc-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-11);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--teal);
+}
+
+.arch-doc-hero-title {
+  font-size: var(--fs-20);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.arch-doc-hero-meta {
+  font-size: var(--fs-12);
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.arch-doc-hero-desc {
+  font-size: var(--fs-13);
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.arch-doc-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--teal-mid);
+  margin-top: auto;
+}
+
+@media (max-width: 900px) {
+  .arch-doc-heroes { grid-template-columns: 1fr; }
+  .arch-doc-hero   { padding: var(--space-4) var(--space-5); border-radius: var(--radius-lg); }
+  .arch-doc-hero-title { font-size: var(--fs-17); }
+}
