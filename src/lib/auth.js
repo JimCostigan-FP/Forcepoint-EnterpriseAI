@@ -20,10 +20,15 @@ export const LOGIN_URL  = '/auth/login'
 export const LOGOUT_URL = '/auth/logout'
 
 // Local-dev escape hatch. Set VITE_AUTH_BYPASS=true in .env.local to skip
-// the SSO LoginPage and render as the placeholder identity. Only active in
-// dev builds — Vite strips it from production bundles when the flag is
-// unset at build time. Branch: local-dev.
-const BYPASS_AUTH = import.meta.env.VITE_AUTH_BYPASS === 'true'
+// the SSO LoginPage and render as the placeholder identity.
+//
+// Two-factor guard so the bypass is physically impossible in production
+// bundles: import.meta.env.DEV is replaced with a literal `false` by Vite
+// during `npm run build`, which dead-code-eliminates the entire bypass
+// branch — even if VITE_AUTH_BYPASS=true sneaks into the build env.
+// Branch: local-dev.
+const BYPASS_AUTH =
+  import.meta.env.DEV && import.meta.env.VITE_AUTH_BYPASS === 'true'
 
 export function useCurrentUser() {
   const identity = useIdentity()
