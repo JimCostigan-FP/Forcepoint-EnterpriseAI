@@ -130,16 +130,24 @@
 }
 .site-hero-cta-ghost:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 
-/* ── Tab nav (sticks below hero) ───────────────────────── */
+/* ── Tab nav (sticks below hero) ─────────────────────────
+   .tab-nav is the full-width navy bar (background, top border). The
+   inner wrapper carries the same max-width + horizontal padding as
+   .header-inner / .site-hero / .portal-body so the tab buttons line
+   up with the hero copy above and the section content below. */
 .tab-nav {
   background: var(--navy-mid);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.tab-nav-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--space-7);
   display: flex;
   overflow-x: auto;
   scrollbar-width: none;
-  max-width: 100%;
 }
-.tab-nav::-webkit-scrollbar { display: none; }
+.tab-nav-inner::-webkit-scrollbar { display: none; }
 
 .tab {
   background: none;
@@ -166,8 +174,9 @@
 
 /* ── Responsive ────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  .header-inner { padding: var(--space-3) var(--space-5); }
-  .site-hero    { padding: var(--space-7) var(--space-5) var(--space-6); }
+  .header-inner   { padding: var(--space-3) var(--space-5); }
+  .site-hero      { padding: var(--space-7) var(--space-5) var(--space-6); }
+  .tab-nav-inner  { padding: 0 var(--space-5); }
 }
 
 @media (max-width: 720px) {
@@ -176,8 +185,149 @@
     flex-wrap: wrap;
     gap: var(--space-3);
   }
-  .header-nav    { gap: var(--space-4); }
-  .site-hero     { padding: var(--space-6) var(--space-4) var(--space-5); }
-  .site-logo-sub { display: none; }
-  .tab           { padding: 10px 14px; }
+  .header-nav     { gap: var(--space-4); }
+  .site-hero      { padding: var(--space-6) var(--space-4) var(--space-5); }
+  .site-logo-sub  { display: none; }
+  .tab-nav-inner  { padding: 0 var(--space-4); }
+  .tab            { padding: 10px 14px; }
+}
+
+/* ── User menu + sign-in button (AI-468) ──────────────────── */
+.site-signin-btn {
+  appearance: none;
+  font: inherit;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--navy);
+  background: #fff;
+  border: 1px solid #fff;
+  padding: 6px 14px;
+  border-radius: var(--radius-md, 8px);
+  cursor: pointer;
+  transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.site-signin-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.35);
+}
+.site-signin-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+  transform: none;
+  box-shadow: none;
+}
+
+.site-user {
+  position: relative;
+  display: inline-flex;
+}
+
+.site-user-trigger {
+  appearance: none;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.site-user-trigger:hover,
+.site-user-trigger.is-open {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.site-user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--navy);
+  background: var(--teal-mid);
+  border-radius: 999px;
+}
+.site-user-name {
+  font-size: var(--fs-12);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-user-chev {
+  color: rgba(255, 255, 255, 0.65);
+  transition: transform var(--dur-1) var(--ease);
+}
+.site-user-chev.is-open { transform: rotate(180deg); }
+
+.site-user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  background: #fff;
+  color: var(--text-primary, #0f172a);
+  border: 1px solid var(--border-subtle, #e3e7ee);
+  border-radius: 12px;
+  box-shadow: 0 18px 36px -22px rgba(15, 23, 42, 0.30);
+  z-index: 60;
+  overflow: hidden;
+}
+.site-user-menu-head {
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--border-subtle, #e3e7ee);
+  background: var(--bg-subtle, #f8fafc);
+}
+.site-user-menu-name  { font-size: 13px; font-weight: 600; color: var(--text-primary, #0f172a); }
+.site-user-menu-email {
+  font-size: 11.5px;
+  color: var(--text-tertiary, #64748b);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-user-menu-provider {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--teal-mid, #0d9b78);
+  background: var(--tint-teal, #e8f6ef);
+  border-radius: 999px;
+}
+/* Bump specificity past `.header-nav a` (which paints inline header links
+   white-on-navy) so the dropdown items stay readable dark-on-white. */
+.header-nav .site-user-menu-item,
+a.site-user-menu-item {
+  display: block;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #0f172a);
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.header-nav .site-user-menu-item:hover,
+a.site-user-menu-item:hover {
+  color: var(--text-primary, #0f172a);
+  background: var(--bg-subtle, #f1f5f9);
+  text-decoration: none;
 }

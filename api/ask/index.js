@@ -1,21 +1,22 @@
 /**
- * api/ask/index.js — Azure Function proxy for Claude API calls
+ * api/ask/index.js — Anthropic API proxy for the portal "Ask" experience.
  * Owner: IT Enterprise AI team · ITEnterpriseAIteam@forcepoint.com
  * Jira:  AI-110
  *
- * This function sits between the browser and the Anthropic API so that:
+ * This handler sits between the browser and the Anthropic API so that:
  *  - The API key never reaches the browser
- *  - Entra ID authentication is validated server-side (via Azure Static Web Apps EasyAuth)
+ *  - Identity is validated server-side via the Okta session (see auth/okta.cjs)
  *  - DLP inspection can be added here (call your Forcepoint DLP API before forwarding)
  *  - Rate limiting and logging can be applied centrally
  *
- * Deploy as an Azure Function (Node.js 20, HTTP trigger, anonymous auth —
- * authentication is handled by Azure Static Web Apps EasyAuth at the app level).
+ * Runs under the Node Express server (server/index.cjs) on the internal
+ * Linux box at 10.23.80.28; the (context, req) calling convention is kept
+ * so the handler stays portable if we ever lift it to a serverless target.
  *
- * Environment variables (set in Azure Function App settings / Key Vault references):
- *   ANTHROPIC_API_KEY   — your Anthropic API key (reference from Key Vault)
+ * Environment variables (set in /etc/ai-portal/api.env):
+ *   ANTHROPIC_API_KEY   — your Anthropic API key
  *   ANTHROPIC_MODEL     — model ID (default: claude-sonnet-4-20250514)
- *   ALLOWED_ORIGINS     — comma-separated allowed CORS origins (e.g. https://enterprise-ai.forcepoint.com)
+ *   ALLOWED_ORIGINS     — comma-separated allowed CORS origins (e.g. http://10.23.80.28)
  */
 
 const https = require("https");

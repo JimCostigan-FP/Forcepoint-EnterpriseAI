@@ -5,7 +5,7 @@ import SkillBuilder from '../skills/SkillBuilder.jsx'
 import GoSacBuilder from '../skills/GoSacBuilder.jsx'
 import { PlusIcon } from '../ui/icons.jsx'
 
-export default function SkillsSection({ active, onAskQuick, query = '', onQueryChange }) {
+export default function SkillsSection({ active, onAskQuick, query = '', onQueryChange, user }) {
   const [goSacVisible, setGoSacVisible] = useState(false)
   const [submitOpen,   setSubmitOpen]   = useState(false)
   const submitRef = useRef(null)
@@ -85,7 +85,7 @@ export default function SkillsSection({ active, onAskQuick, query = '', onQueryC
       </div>
 
       <div ref={submitRef}>
-        <SkillSubmit open={submitOpen} onOpenChange={setSubmitOpen} />
+        <SkillSubmit open={submitOpen} onOpenChange={setSubmitOpen} user={user} />
       </div>
 
       <SkillBuilder onFirstDownload={() => setGoSacVisible(true)} />

@@ -1,4 +1,4 @@
-import { useState, useRef, Fragment } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import JSZip from 'jszip'
 import {
   ShieldIcon, ScalesIcon, LockIcon, DocCheckIcon, WrenchIcon, BranchIcon,
@@ -78,7 +78,10 @@ async function verifyGitHubIdentity(pat, formEmail) {
 }
 
 // ── GITHUB PUSH — uploads all three files from inventory ──
-async function pushInventoryToGitHub(skillName, version, inventory, committer, intent, pat) {
+// `extras` carries Iris MVP enrichments (AI-471): the IRIS-style tracking
+// reference, optional trust tier, and optional use-case text. All three
+// surface in the PR body so reviewers see the routing/context upfront.
+async function pushInventoryToGitHub(skillName, version, inventory, committer, intent, pat, extras = {}) {
   const apiBase = `${GITHUB_CONFIG.API}/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}`
   const branch  = `skill/${skillName}/v${version}`
   const headers = {
@@ -129,11 +132,24 @@ async function pushInventoryToGitHub(skillName, version, inventory, committer, i
       }
     }
 
+    const irisRef = extras.irisRef ? `**Tracking ref:** \`${extras.irisRef}\`\n` : ''
+    const tierLine = extras.tier ? `**Trust tier:** ${extras.tier}\n` : ''
+    const useCaseBlock = extras.useCase
+      ? `\n### Use case / business value\n${extras.useCase}\n`
+      : ''
+    const prBody =
+      `## Skill Submission: \`${skillName}\` v${version}\n\n` +
+      `**Submitter:** ${committer}\n` +
+      `${irisRef}${tierLine}` +
+      `\n### What does this skill do?\n${intent}\n` +
+      useCaseBlock +
+      `\n---\n_Submitted via the Forcepoint Enterprise AI (Iris). Files at \`skills/${skillName}/v${version}/\`._`
+
     const prRes = await fetch(`${apiBase}/pulls`, {
       method: 'POST', headers,
       body: JSON.stringify({
         title: `Skill Submission: ${skillName} v${version}`,
-        body:  `## Skill Submission: \`${skillName}\` v${version}\n\n**Submitter:** ${committer}\n\n### What does this skill do?\n${intent}\n\n---\n_Submitted via the Forcepoint Enterprise AI. Files at \`skills/${skillName}/v${version}/\`._`,
+        body:  prBody,
         head: branch, base: 'main',
       }),
     })
@@ -163,36 +179,50 @@ async function pushInventoryToGitHub(skillName, version, inventory, committer, i
 }
 
 // ── MANIFEST MODAL ─────────────────────────────────────────
-function ManifestModal({ skillName, version, ownerEmail, onSave, onClose }) {
+// Inputs that already exist on the Step 1 form (owner email, baseline/skill
+// tokens, default description) are passed in as props rather than asked for
+// again. The modal focuses on the fields that are *manifest-specific*:
+// triggers, connection, model, deprecation criteria.
+function ManifestModal({
+  skillName, version, ownerEmail,
+  defaultDescription = '',
+  baseTokens, setBaseTokens,
+  skillTokens, setSkillTokens,
+  onSave, onClose,
+}) {
   const today = new Date().toISOString().split('T')[0]
-  const [desc,         setDesc]         = useState('')
+  // Seed description from the Step 1 intent — the submitter just wrote
+  // exactly this; don't ask again. They can still edit if the manifest
+  // description needs a tighter one-liner.
+  const [desc,         setDesc]         = useState(defaultDescription)
   const [triggers,     setTriggers]     = useState('')
-  const [owner,        setOwner]        = useState(ownerEmail || '')
-  const [baseTokens,   setBaseTokens]   = useState('')
-  const [skillTokens,  setSkillTokens]  = useState('')
   const [catalog,      setCatalog]      = useState('')
   const [connSchema,   setConnSchema]   = useState('')
-  const [execPaths,    setExecPaths]    = useState({ 'Claude-LangGraph': true, NMAP: false })
+  // Forcepoint Intelligence Platform model tier the skill is authored for —
+  // matches the three tiers in "How to Request a Custom Skill"
+  // (Skill_Request_Guide_2.docx, Step 1). Sonnet 4.6 is the recommended
+  // default and covers the majority of skills.
+  const [model,        setModel]        = useState('claude-sonnet-4-6')
   const [deprecText,   setDeprecText]   = useState('')
   const [error,        setError]        = useState('')
-
-  const togglePath = key => setExecPaths(p => ({ ...p, [key]: !p[key] }))
 
   const generate = () => {
     if (!desc.trim())     { setError('Description is required.'); return }
     if (!triggers.trim()) { setError('At least one trigger keyword is required.'); return }
-    if (!owner.trim())    { setError('Owner email is required.'); return }
+    if (!ownerEmail || !ownerEmail.trim()) {
+      setError('Owner email is missing on the form. Sign in with Okta or fill the email in Step 1.')
+      return
+    }
 
     const base = parseInt(baseTokens) || null
     const skill = parseInt(skillTokens) || null
-    const paths = Object.entries(execPaths).filter(([,v]) => v).map(([k]) => k)
 
     const manifest = {
       name:             skillName,
       version,
       description:      desc.trim(),
       triggers:         triggers.split(',').map(t => t.trim()).filter(Boolean),
-      owner:            owner.trim(),
+      owner:            ownerEmail.trim(),
       contributed_date: today,
       token_efficiency: (() => {
         const b = base  || 1
@@ -203,11 +233,11 @@ function ManifestModal({ skillName, version, ownerEmail, onSave, onClose }) {
         catalog: catalog.trim() || 'default',
         schema:  connSchema.trim() || 'default',
       },
-      ...(paths.length ? { execution_paths: paths } : {}),
+      model:            model,
       maintenance: {
         review_cadence:       'quarterly',
         deprecation_criteria: deprecText.trim() || 'Review if trigger keywords change significantly.',
-        skill_owner:          owner.trim(),
+        skill_owner:          ownerEmail.trim(),
       },
       status: 'active',
     }
@@ -229,18 +259,26 @@ function ManifestModal({ skillName, version, ownerEmail, onSave, onClose }) {
         </div>
 
         <div className="sb-modal-body-grid">
+          {/* Owner is taken from Step 1 (Forcepoint email, pre-filled from
+              Okta) — no need to re-enter. Shown here as a read-only badge
+              so the submitter sees who will be attributed in the manifest. */}
+          {ownerEmail && (
+            <div className="sb-modal-owner">
+              <span className="sb-modal-owner-label">Owner</span>
+              <strong>{ownerEmail}</strong>
+              <span className="sb-modal-owner-hint">from your Forcepoint sign-in (edit in Step 1)</span>
+            </div>
+          )}
+
           <div className="sb-field">
             <label className="sb-label">Description <span className="sb-req">required</span></label>
             <textarea className="sb-input" rows={2} placeholder="Eliminates redundant discovery calls by caching…" value={desc} onChange={e => setDesc(e.target.value)} />
+            <div className="sb-hint">Pre-filled from your Step 1 intent. Tighten to a one-liner for the manifest if you like.</div>
           </div>
           <div className="sb-field">
             <label className="sb-label">Trigger keywords <span className="sb-req">required</span></label>
             <input type="text" className="sb-input" placeholder="Salesforce, pipeline, opportunity, revenue" value={triggers} onChange={e => setTriggers(e.target.value)} />
-            <div className="sb-hint">Comma-separated. Claude activates this skill when these words appear in a query.</div>
-          </div>
-          <div className="sb-field">
-            <label className="sb-label">Owner email <span className="sb-req">required</span></label>
-            <input type="email" className="sb-input" placeholder="you@forcepoint.com" value={owner} onChange={e => setOwner(e.target.value)} />
+            <div className="sb-hint">Comma-separated. The platform activates this skill when these words appear in a query.</div>
           </div>
 
           <div className="sb-row-2">
@@ -271,14 +309,14 @@ function ManifestModal({ skillName, version, ownerEmail, onSave, onClose }) {
           </div>
 
           <div className="sb-field">
-            <label className="sb-label">Execution paths</label>
-            <div className="sb-checkbox-row">
-              {Object.keys(execPaths).map(k => (
-                <label key={k} className="sb-checkbox">
-                  <input type="checkbox" checked={execPaths[k]} onChange={() => togglePath(k)} />
-                  <span>{k}</span>
-                </label>
-              ))}
+            <label className="sb-label">Model <span className="sb-req">required</span></label>
+            <select className="sb-input" value={model} onChange={e => setModel(e.target.value)}>
+              <option value="claude-haiku-4-5">Haiku 4.5 — fast (quick, repetitive, high-volume tasks)</option>
+              <option value="claude-sonnet-4-6">Sonnet 4.6 — balanced (recommended default)</option>
+              <option value="claude-opus-4-8">Opus 4.8 — most capable (complex reasoning, long documents)</option>
+            </select>
+            <div className="sb-hint">
+              Which Forcepoint Intelligence Platform model the skill is authored for. When in doubt, choose Sonnet 4.6 — it handles the majority of skill types well. Only escalate to Opus 4.8 if Sonnet's output consistently falls short on a complex task.
             </div>
           </div>
 
@@ -303,13 +341,20 @@ function ManifestModal({ skillName, version, ownerEmail, onSave, onClose }) {
 }
 
 // ── README MODAL ───────────────────────────────────────────
-function ReadmeModal({ skillName, version, ownerEmail, onSave, onClose }) {
+// Like ManifestModal, the README generator inherits identity (owner email)
+// and token-efficiency numbers from the parent so the submitter doesn't
+// re-enter them. Usage description seeds from the Step 1 intent.
+function ReadmeModal({
+  skillName, version, ownerEmail,
+  defaultUsage = '',
+  baseTokens, setBaseTokens,
+  skillTokens, setSkillTokens,
+  onSave, onClose,
+}) {
   const today = new Date().toISOString().split('T')[0]
   const [covers,   setCovers]   = useState('')
   const [deferred, setDeferred] = useState('')
-  const [usage,    setUsage]    = useState('')
-  const [base,     setBase]     = useState('')
-  const [skillTok, setSkillTok] = useState('')
+  const [usage,    setUsage]    = useState(defaultUsage)
   const [error,    setError]    = useState('')
 
   const generate = () => {
@@ -318,8 +363,8 @@ function ReadmeModal({ skillName, version, ownerEmail, onSave, onClose }) {
     const bulletList = text =>
       text.split('\n').map(l => l.trim()).filter(Boolean).map(l => `- ${l}`).join('\n')
 
-    const tokenSection = base && skillTok
-      ? `\n## Token efficiency\n\n| Metric | Value |\n| --- | --- |\n| Baseline (no skill) | ~${parseInt(base).toLocaleString()} tokens |\n| With skill | ~${parseInt(skillTok).toLocaleString()} tokens |\n| Reduction | ${Math.round((1 - parseInt(skillTok) / parseInt(base)) * 100)}% |\n`
+    const tokenSection = baseTokens && skillTokens
+      ? `\n## Token efficiency\n\n| Metric | Value |\n| --- | --- |\n| Baseline (no skill) | ~${parseInt(baseTokens).toLocaleString()} tokens |\n| With skill | ~${parseInt(skillTokens).toLocaleString()} tokens |\n| Reduction | ${Math.round((1 - parseInt(skillTokens) / parseInt(baseTokens)) * 100)}% |\n`
       : ''
 
     const md = `# ${skillName} v${version}\n\n**Authored by:** ${ownerEmail}  \n**Date:** ${today}  \n**Owner:** ${ownerEmail}\n\n## What this skill covers\n\n${bulletList(covers)}\n${deferred.trim() ? `\n## What is NOT in v${version.split('.')[0]} (deferred)\n\n${bulletList(deferred)}\n` : ''}${usage.trim() ? `\n## Usage\n\n${usage.trim()}\n` : ''}${tokenSection}\n## Review cadence\n\nQuarterly.\n`
@@ -341,6 +386,13 @@ function ReadmeModal({ skillName, version, ownerEmail, onSave, onClose }) {
         </div>
 
         <div className="sb-modal-body-grid">
+          {ownerEmail && (
+            <div className="sb-modal-owner">
+              <span className="sb-modal-owner-label">Authored by</span>
+              <strong>{ownerEmail}</strong>
+              <span className="sb-modal-owner-hint">from your Forcepoint sign-in</span>
+            </div>
+          )}
           <div className="sb-field">
             <label className="sb-label">What this skill covers <span className="sb-req">required</span></label>
             <textarea className="sb-input" rows={4} placeholder={"Cached Opportunity and Account schemas\nAll picklist values for StageName\nSeven pre-baked query templates"} value={covers} onChange={e => setCovers(e.target.value)} />
@@ -354,17 +406,24 @@ function ReadmeModal({ skillName, version, ownerEmail, onSave, onClose }) {
           <div className="sb-field">
             <label className="sb-label">Usage description <span className="sb-opt">optional</span></label>
             <textarea className="sb-input" rows={2} placeholder="Triggered automatically when queries involve the keywords in manifest.json…" value={usage} onChange={e => setUsage(e.target.value)} />
+            <div className="sb-hint">Pre-filled from your Step 1 intent — tweak if the README needs a different angle.</div>
           </div>
           <div className="sb-row-2">
             <div className="sb-field">
               <label className="sb-label">Baseline tokens <span className="sb-opt">optional</span></label>
-              <input type="number" className="sb-input" placeholder="22000" value={base} onChange={e => setBase(e.target.value)} />
+              <input type="number" className="sb-input" placeholder="22000" value={baseTokens} onChange={e => setBaseTokens(e.target.value)} />
             </div>
             <div className="sb-field">
               <label className="sb-label">Skill tokens <span className="sb-opt">optional</span></label>
-              <input type="number" className="sb-input" placeholder="3000" value={skillTok} onChange={e => setSkillTok(e.target.value)} />
+              <input type="number" className="sb-input" placeholder="3000" value={skillTokens} onChange={e => setSkillTokens(e.target.value)} />
+              {baseTokens && skillTokens && parseInt(baseTokens) > 0 && (
+                <div className="sb-hint sb-hint-ok">
+                  → {Math.round((1 - parseInt(skillTokens) / parseInt(baseTokens)) * 100)}% reduction
+                </div>
+              )}
             </div>
           </div>
+          <div className="sb-hint" style={{ marginTop: -6 }}>Token numbers are shared with the manifest — edit them in either modal and both stay in sync.</div>
         </div>
 
         {error && <div className="sb-validation sb-val-error">{error}</div>}
@@ -393,7 +452,7 @@ function PipelineNote({ kind, children }) {
 }
 
 // ── MAIN COMPONENT ─────────────────────────────────────────
-export default function SkillSubmit({ open, onOpenChange }) {
+export default function SkillSubmit({ open, onOpenChange, user }) {
   const fileInputRef = useRef(null)
 
   // Support both controlled (open + onOpenChange from parent) and uncontrolled use.
@@ -412,10 +471,26 @@ export default function SkillSubmit({ open, onOpenChange }) {
   const [intent,    setIntent]    = useState('')
   const [skillName, setSkillName] = useState('')
   const [version,   setVersion]   = useState('1.0')
+  // ── Iris MVP enrichments (AI-471) — optional context that feeds the PR body
+  const [tier,      setTier]      = useState('')
+  const [useCase,   setUseCase]   = useState('')
+
+  // ── Identity pre-fill from Okta (AI-468) — name and email come straight
+  // from the SSO session so the submitter isn't re-typing what we already
+  // know. They can still override (e.g. preferred form of their name).
+  useEffect(() => {
+    if (user?.name  && !name)  setName(user.name)
+    if (user?.email && !email) setEmail(user.email)
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // File inventory: each slot = { content, filename, source } | null
   const [inventory, setInventory] = useState({ manifest: null, readme: null, skillMd: null })
   const [dragOver,  setDragOver]  = useState(false)
+
+  // Token efficiency lives at the parent so both the manifest and the README
+  // generator see the same numbers — typing them once is enough.
+  const [baseTokens,  setBaseTokens]  = useState('')
+  const [skillTokens, setSkillTokens] = useState('')
 
   const [showManifest, setShowManifest] = useState(false)
   const [showReadme,   setShowReadme]   = useState(false)
@@ -493,7 +568,7 @@ export default function SkillSubmit({ open, onOpenChange }) {
     if (!intent.trim() || intent.trim().length < 20)           { setValMsg('Please describe what the skill does (at least 20 characters).'); return false }
     if (!skillName.trim())                                     { setValMsg('Skill name is required.'); return false }
     if (!/^[a-z0-9-]+$/.test(skillName.trim()))                { setValMsg('Skill name must be lowercase letters, numbers, and hyphens only.'); return false }
-    if (!version.trim() || !/^\d+\.\d+$/.test(version.trim())) { setValMsg('Version must be in major.minor format (e.g. 1.0).'); return false }
+    if (!version.trim() || !/^\d+\.\d+(\.\d+)?$/.test(version.trim())) { setValMsg('Version must be in major.minor or major.minor.patch format (e.g. 1.0 or 1.0.3).'); return false }
     if (!inventory.manifest || !inventory.readme || !inventory.skillMd) {
       setValMsg('All three files are required. Use the Generate buttons to create any that are missing.')
       return false
@@ -508,7 +583,13 @@ export default function SkillSubmit({ open, onOpenChange }) {
     if (!identity.ok) { setValMsg(identity.error); return }
     setValMsg(null)
 
-    const ref   = 'SKL-' + Date.now().toString(36).toUpperCase().slice(-6)
+    // Two refs: legacy SKL-* (kept for backward compatibility with anything
+    // that already references it) and an IRIS-* tracking ref (AI-471) that
+    // matches the format the low-friction /api/iris-intake endpoint emits,
+    // so submitters across both paths quote the same shape of identifier.
+    const ref     = 'SKL-' + Date.now().toString(36).toUpperCase().slice(-6)
+    const irisRef = 'IRIS-' + Date.now().toString(36).toUpperCase() +
+                    '-' + Math.random().toString(36).slice(2, 6).toUpperCase()
     const sName = skillName.trim()
     const sVer  = version.trim()
     setRefNum(ref)
@@ -543,7 +624,8 @@ export default function SkillSubmit({ open, onOpenChange }) {
     setStep(4, 'running', 'assigned')
     setStep(5, 'running', 'uploading…')
     const committer = `${name} (${dept}) <${email}>`
-    const result    = await pushInventoryToGitHub(sName, sVer, inventory, committer, intent.trim(), pat.trim())
+    const result    = await pushInventoryToGitHub(sName, sVer, inventory, committer, intent.trim(), pat.trim(),
+      { irisRef, tier: tier || null, useCase: useCase.trim() || null })
 
     if (!result.ok) {
       setSubmitted(false)
@@ -556,7 +638,7 @@ export default function SkillSubmit({ open, onOpenChange }) {
 
     setStep(4, 'pass', 'assigned')
     setStep(5, 'pass', `PR #${result.prNumber}`)
-    setPrResult({ ...result, ref, name, dept, sName, sVer })
+    setPrResult({ ...result, ref, irisRef, tier, useCase, name, dept, sName, sVer })
     setSubmitDisabled(false)
   }
 
@@ -620,16 +702,37 @@ export default function SkillSubmit({ open, onOpenChange }) {
                 </div>
               </div>
 
-              <div className="ss-form-grid ss-form-grid-3">
-                <div className="sb-field">
+              {/* Identity pill (AI-468) — confirms the Okta-signed-in user
+                  who will be attributed on the PR. Pre-fills name + email
+                  in the inputs below; the submitter can still edit either. */}
+              {user?.email && (
+                <div className="ss-identity">
+                  <div className="ss-identity-pill">
+                    <CheckIcon size={12} />
+                    Signed in as <strong>{user.email}</strong>
+                    <span className="ss-identity-provider">
+                      {user.provider === 'okta' ? 'Okta SSO' : 'Dev session'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* All Step 1 inputs share one 12-col grid so multi-column
+                  rows (Name/Email/Department, Trust tier/Use case) line up
+                  with the full-width rows (PAT, Intent). Trust tier + Use
+                  case sit in the main grid rather than hidden behind a
+                  toggle — they're clearly marked optional and short enough
+                  that always-visible is cleaner than a disclosure click. */}
+              <div className="ss-form-grid ss-form-grid-12">
+                <div className="sb-field" style={{ gridColumn: 'span 4' }}>
                   <label className="sb-label">Full name</label>
-                  <input type="text" className="sb-input" placeholder="Jane Smith" value={name} onChange={e => setName(e.target.value)} />
+                  <input type="text" className="sb-input" placeholder={user?.name || 'Jane Smith'} value={name} onChange={e => setName(e.target.value)} />
                 </div>
-                <div className="sb-field">
+                <div className="sb-field" style={{ gridColumn: 'span 4' }}>
                   <label className="sb-label">Forcepoint email</label>
-                  <input type="email" className="sb-input" placeholder="jane.smith@forcepoint.com" value={email} onChange={e => setEmail(e.target.value)} />
+                  <input type="email" className="sb-input" placeholder={user?.email || 'jane.smith@forcepoint.com'} value={email} onChange={e => setEmail(e.target.value)} />
                 </div>
-                <div className="sb-field">
+                <div className="sb-field" style={{ gridColumn: 'span 4' }}>
                   <label className="sb-label">Department</label>
                   <select className="sb-input" value={dept} onChange={e => setDept(e.target.value)}>
                     <option value="">Select department…</option>
@@ -638,36 +741,58 @@ export default function SkillSubmit({ open, onOpenChange }) {
                     ))}
                   </select>
                 </div>
-              </div>
-              <div className="sb-field">
-                <label className="sb-label">
-                  GitHub personal access token <span className="sb-opt">used once per submission, not stored</span>
-                </label>
-                <input
-                  type="password"
-                  className="sb-input"
-                  placeholder="Paste your Enterprise GitHub PAT"
-                  value={pat}
-                  onChange={e => setPat(e.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-                <div className="sb-hint">
-                  Required scopes: <code className="ss-code">repo</code> and <code className="ss-code">user:email</code>.{' '}
-                  <a
-                    href={`${GITHUB_CONFIG.HOST}/settings/tokens/new?scopes=repo,user:email&description=Forcepoint%20Enterprise%20AI%20-%20Skill%20Submit`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Create one
-                  </a>{' '}
-                  — the token is validated against your Forcepoint email before any commit is made, and is never stored or sent off-host.
+
+                <div className="sb-field" style={{ gridColumn: 'span 12' }}>
+                  <label className="sb-label">
+                    GitHub personal access token <span className="sb-opt">used once per submission, not stored</span>
+                  </label>
+                  <div className="sb-input-row">
+                    <input
+                      type="password"
+                      className="sb-input"
+                      placeholder="Paste your Enterprise GitHub PAT"
+                      value={pat}
+                      onChange={e => setPat(e.target.value)}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    <a
+                      className="sb-input-action"
+                      href={`${GITHUB_CONFIG.HOST}/settings/tokens/new?scopes=repo,user:email&description=Forcepoint%20Enterprise%20AI%20-%20Skill%20Submit`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Open GitHub Enterprise in a new tab to mint a token"
+                    >
+                      <GithubIcon size={13} />
+                      Generate PAT
+                    </a>
+                  </div>
+                  <div className="sb-hint">
+                    Required scopes: <code className="ss-code">repo</code> + <code className="ss-code">user:email</code>. Validated against your Forcepoint email before any commit; never stored or sent off-host.
+                  </div>
                 </div>
-              </div>
-              <div className="sb-field">
-                <label className="sb-label">What does this skill do?</label>
-                <textarea className="sb-input" rows={3} placeholder="Describe the problem this skill solves, who will use it, and what data or systems it accesses…" value={intent} onChange={e => setIntent(e.target.value)} />
-                <div className="sb-hint">Becomes the body of the GitHub PR. Aim for 1–2 paragraphs.</div>
+
+                <div className="sb-field" style={{ gridColumn: 'span 12' }}>
+                  <label className="sb-label">What does this skill do?</label>
+                  <textarea className="sb-input" rows={3} placeholder="Describe the problem this skill solves, who will use it, and what data or systems it accesses…" value={intent} onChange={e => setIntent(e.target.value)} />
+                  <div className="sb-hint">Becomes the body of the GitHub PR. Aim for 1–2 paragraphs.</div>
+                </div>
+
+                <div className="sb-field" style={{ gridColumn: 'span 4' }}>
+                  <label className="sb-label">Trust tier <span className="sb-opt">optional</span></label>
+                  <select className="sb-input" value={tier} onChange={e => setTier(e.target.value)}>
+                    <option value="">Not yet decided</option>
+                    <option>T1 — Personal</option>
+                    <option>T2 — Team</option>
+                    <option>T3 — Department</option>
+                    <option>T4 — Enterprise</option>
+                  </select>
+                  <div className="sb-hint">Where this skill sits on the trust scale. Reviewers use it for routing.</div>
+                </div>
+                <div className="sb-field" style={{ gridColumn: 'span 8' }}>
+                  <label className="sb-label">Use case / business value <span className="sb-opt">optional</span></label>
+                  <textarea className="sb-input" rows={2} placeholder="Who benefits and how — even one line helps triage." value={useCase} onChange={e => setUseCase(e.target.value)} />
+                </div>
               </div>
             </div>
 
@@ -877,10 +1002,22 @@ export default function SkillSubmit({ open, onOpenChange }) {
                         <GithubIcon size={14} />
                         {prResult.prUrl}
                       </a>
+
+                      {/* Iris tracking ref (AI-471) — human-readable handle
+                          submitters can quote when chasing status, matching
+                          the shape emitted by /api/iris-intake. */}
+                      {prResult.irisRef && (
+                        <div className="ss-success-ref">
+                          <span className="ss-success-ref-label">Tracking reference</span>
+                          <code className="ss-success-ref-value">{prResult.irisRef}</code>
+                        </div>
+                      )}
+
                       <div className="ss-success-meta">
                         Branch <code className="ss-code">skill/{prResult.sName}/v{prResult.sVer}</code> →{' '}
                         <code className="ss-code">main</code>
-                        {' · '}Reference <strong>{prResult.ref}</strong>
+                        {prResult.tier ? <>{' · '}Tier <strong>{prResult.tier}</strong></> : null}
+                        {' · '}PR Reference <strong>{prResult.ref}</strong>
                         {' · '}<a href="https://forcepoint.atlassian.net/jira/software/c/projects/AI/boards/4837" target="_blank" rel="noreferrer">Track in AI Jira board</a>
                       </div>
                     </div>
@@ -892,12 +1029,17 @@ export default function SkillSubmit({ open, onOpenChange }) {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals — owner email, description/usage, and token numbers all
+          flow through from the Step 1 form so the submitter doesn't re-type
+          anything they've already filled in. */}
       {showManifest && (
         <ManifestModal
           skillName={sName}
           version={version}
           ownerEmail={email}
+          defaultDescription={intent.trim()}
+          baseTokens={baseTokens}    setBaseTokens={setBaseTokens}
+          skillTokens={skillTokens}  setSkillTokens={setSkillTokens}
           onSave={content => { setInventory(p => ({ ...p, manifest: { content, filename: 'manifest.json', source: 'generated' } })); setShowManifest(false) }}
           onClose={() => setShowManifest(false)}
         />
@@ -907,6 +1049,9 @@ export default function SkillSubmit({ open, onOpenChange }) {
           skillName={sName}
           version={version}
           ownerEmail={email}
+          defaultUsage={intent.trim()}
+          baseTokens={baseTokens}    setBaseTokens={setBaseTokens}
+          skillTokens={skillTokens}  setSkillTokens={setSkillTokens}
           onSave={content => { setInventory(p => ({ ...p, readme: { content, filename: 'README.md', source: 'generated' } })); setShowReadme(false) }}
           onClose={() => setShowReadme(false)}
         />

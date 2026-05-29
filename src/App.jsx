@@ -10,6 +10,8 @@ import EventsSection from './components/sections/EventsSection.jsx'
 import AmbassadorSection from './components/sections/AmbassadorSection.jsx'
 import ArchitectureSection from './components/sections/ArchitectureSection.jsx'
 import SignalSection from './components/sections/SignalSection.jsx'
+import LoginPage from './components/auth/LoginPage.jsx'
+import { useCurrentUser } from './lib/auth.js'
 
 const TABS = [
   { id: 'home',         label: 'Overview' },
@@ -24,6 +26,7 @@ const TABS = [
 ]
 
 export default function App() {
+  const auth = useCurrentUser()
   const [activeSection, setActiveSection] = useState('home')
   const [globalQuery, setGlobalQuery]     = useState('')
   const [toast, setToast]                 = useState(null)
@@ -40,6 +43,29 @@ export default function App() {
   }
   function askQuick(/* question */) { notify('AI assistant — coming soon') }
 
+  // ── Auth gate ──────────────────────────────────────────────────────
+  // Avoid flashing the LoginPage before /api/auth/me resolves.
+  if (auth.status === 'loading') {
+    return (
+      <div className="auth-splash" role="status" aria-live="polite">
+        <div className="auth-splash-mark">FP</div>
+        <div className="auth-splash-label">Loading Forcepoint Enterprise AI…</div>
+      </div>
+    )
+  }
+
+  // Anonymous (or error reading the session) → LoginPage owns the viewport.
+  // Logging out redirects to /, which lands back here in the anonymous state.
+  if (auth.status !== 'authenticated') {
+    return (
+      <LoginPage
+        features={auth.features}
+        onDevLogin={auth.signInAsDev}
+        returnTo="/"
+      />
+    )
+  }
+
   return (
     <>
       <Header
@@ -47,10 +73,11 @@ export default function App() {
         tabs={TABS}
         onShowSection={showSection}
         onAskQuick={askQuick}
+        auth={auth}
       />
 
       <main className="portal-body" id="main-content">
-        <HomeSection         active={activeSection === 'home'}         onShowSection={showSection} onAskQuick={askQuick} />
+        <HomeSection         active={activeSection === 'home'}         onShowSection={showSection} onAskQuick={askQuick} user={auth.user} />
         <HowtosSection       active={activeSection === 'howtos'}       onAskQuick={askQuick} />
         <NewsSection         active={activeSection === 'news'} />
         <SkillsSection
@@ -58,6 +85,7 @@ export default function App() {
           onAskQuick={askQuick}
           query={globalQuery}
           onQueryChange={setGlobalQuery}
+          user={auth.user}
         />
         <PromptsSection      active={activeSection === 'prompts'}      onAskQuick={askQuick} />
         <EventsSection       active={activeSection === 'events'}       onAskQuick={askQuick} />

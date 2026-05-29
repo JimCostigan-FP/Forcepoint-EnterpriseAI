@@ -46,9 +46,19 @@ const SUGGESTED_PROMPTS = [
     ask:   'Review this code for security issues, readability and performance. Flag any patterns that could create compliance risk.' },
 ]
 
-export default function HomeSection({ active, onShowSection, onAskQuick }) {
+// Pull the first display name out of a full name or an email address —
+// "ismael.contrerasmejia@forcepoint.com" → "Ismael", "Jane Smith" → "Jane".
+function firstNameOf(nameOrEmail) {
+  if (!nameOrEmail) return ''
+  const base = String(nameOrEmail).split('@')[0].replace(/[._-]+/g, ' ').trim()
+  const first = base.split(/\s+/)[0]
+  return first ? first.charAt(0).toUpperCase() + first.slice(1) : ''
+}
+
+export default function HomeSection({ active, onShowSection, onAskQuick, user }) {
   const [pinned, setPinned] = useState(['skills', 'prompts', 'howtos', 'events'])
   const [customizing, setCustomizing] = useState(false)
+  const firstName = firstNameOf(user?.name || user?.email) || 'there'
 
   function togglePin(id, e) {
     e.stopPropagation()
@@ -82,7 +92,7 @@ export default function HomeSection({ active, onShowSection, onAskQuick }) {
               <span className="hero-eyebrow-dot" />
               Live · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </span>
-            <h1 className="hero-title">{greeting()}, Jim.</h1>
+            <h1 className="hero-title">{greeting()}, {firstName}.</h1>
             <p className="hero-subtitle">
               Here's what's moving in Forcepoint AI today — three new skills updates, two pilot reviews, and one fresh issue of The Signal.
             </p>

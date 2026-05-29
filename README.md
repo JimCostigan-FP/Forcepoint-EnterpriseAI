@@ -15,13 +15,11 @@ This project exists to provide a single trusted destination for:
 ## Key Capabilities
 
 - React single-page portal with section-based navigation
-- Auth-protected access through Azure Static Web Apps + Microsoft Entra ID
+- Auth-protected access through **Okta SAML 2.0** (Forcepoint Okta org at `https://fp.okta.com`)
+- Self-hosted Node/Express API on the internal box at `10.23.80.28`, fronted by nginx
 - Server-side proxy endpoint for Anthropic API calls at `/api/ask`
 - Content-driven UI powered by versioned source data
-- Skill tooling:
-  - Skill package builder (`SKILL.md` ZIP generation)
-  - Skill submission flow with GitHub file/PR automation
-  - Guided metadata and documentation generation support
+- Iris MVP skill intake (AI-471): low-friction `name + zip` form → server-side commit to the `EAI-claude-skills` GitHub triage folder
 
 ## Portal Sections
 
@@ -46,19 +44,22 @@ This project exists to provide a single trusted destination for:
 
 ### API
 
-- Runtime: Azure Functions (Node.js 20)
-- Endpoint: `api/ask/index.js`
-- Purpose:
-  - Keep Anthropic API credentials server-side
-  - Enable centralized policy controls (DLP, logging, throttling)
-  - Return model responses to authenticated portal clients
+- Runtime: Node.js 20 + Express (`server/index.cjs`), running under systemd as `ai-portal-api`
+- Endpoints:
+  - `/api/auth/me`        — Okta SAML session identity + feature flags
+  - `/api/iris-intake`    — receives the submitted zip, commits it to the GitHub triage folder
+  - `/api/ask`            — Anthropic API proxy (keeps the API key server-side)
+  - `/api/health`         — liveness probe
+- The Anthropic key, GitHub hopper token, SAML cert, and session secret live in `/etc/ai-portal/api.env` (root-owned, mode 600).
 
 ### Platform and Security
 
-- Hosting target: Azure Static Web Apps
-- Auth model: Entra ID via Static Web Apps EasyAuth
-- Route protection: authenticated access required for `/*` and `/api/*`
-- Security headers and SPA fallback configured in `staticwebapp.config.json`
+- Deployment: internal Linux host `10.23.80.28`, fronted by nginx on port 80
+- Auth: **Okta SAML 2.0** (org-level auth server at `https://fp.okta.com`); `auth/okta.cjs` wires `@node-saml/node-saml` into Express
+- Session: `express-session` (8-hour `iris.sid` cookie, `httpOnly + sameSite=lax`; `secure` flag derived from `PORTAL_BASE_URL` scheme)
+- Route protection: `okta.requireAuth` middleware gates `/api/iris-intake` and `/api/ask`; the React app gates the entire UI behind a LoginPage when anonymous
+- Security headers + SPA fallback configured in `/etc/nginx/conf.d/ai-portal.conf`
+- Dev login: `/auth/dev-login` bypasses Okta for QA — auto-enabled when SAML isn't configured, force-toggle with `IRIS_ALLOW_DEV_LOGIN`
 
 ## Repository Structure
 
@@ -80,39 +81,51 @@ Forcepoint-EnterpriseAI/
 │   ├── content/
 │   │   └── signal/                      # Newsletter HTML imported as ?raw by SignalSection
 │   │
+│   ├── lib/
+│   │   ├── date.js                      # Shared date/time helpers
+│   │   └── auth.js                      # useCurrentUser hook + LOGIN/LOGOUT URLs
+│   │
 │   └── components/
 │       ├── layout/
-│       │   ├── Sidebar.jsx              # Grouped vertical nav
-│       │   ├── Topbar.jsx               # Brand + breadcrumb + search + actions + profile
-│       │   ├── Footer.jsx               # Site footer
-│       │   └── AskAIFloat.jsx           # Floating AI launcher (sole AI entry)
+│       │   ├── Header.jsx               # Site header + tab nav + user menu (initials/logout)
+│       │   └── Footer.jsx               # Site footer
+│       │
+│       ├── auth/
+│       │   └── LoginPage.jsx            # Full-viewport sign-in: Okta SSO + dev login
 │       │
 │       ├── ui/
 │       │   └── icons.jsx                # SVG icon set (single source for all icons)
 │       │
 │       ├── skills/
+│       │   ├── SkillSubmit.jsx          # Iris MVP intake (name + zip → /api/iris-intake)
 │       │   ├── SkillBuilder.jsx         # In-browser SKILL.md ZIP authoring tool
-│       │   ├── SkillSubmit.jsx          # Governance pipeline + GitHub PR flow
 │       │   └── GoSacBuilder.jsx         # Bonus live-data skill walkthrough
 │       │
 │       └── sections/
-│           ├── HomeSection.jsx          # Dashboard: hero + stats + pinned + activity + insight
+│           ├── HomeSection.jsx          # Dashboard hero (greeting personalized to SSO user)
 │           ├── SkillsSection.jsx
 │           ├── PromptsSection.jsx
 │           ├── HowtosSection.jsx
-│           ├── EventsSection.jsx        # Calendar + filter chips + grouped event cards
+│           ├── EventsSection.jsx
 │           ├── NewsSection.jsx
 │           ├── AmbassadorSection.jsx
 │           ├── ArchitectureSection.jsx
 │           └── SignalSection.jsx
 │
 ├── api/
-│   └── ask/index.js                     # Azure Function — Anthropic proxy
-├── index.html                           # Vite HTML entry (preconnect + theme bootstrap)
-├── staticwebapp.config.json             # Auth, headers, routing, API runtime
-├── vite.config.js                       # Vite + React plugin config
+│   ├── ask/index.js                     # Anthropic API proxy (server-side key)
+│   └── iris-intake/index.js             # Receives zip, commits to GitHub triage folder
+│
+├── auth/
+│   └── okta.cjs                         # Okta SAML 2.0 SSO via @node-saml/node-saml
+│
+├── server/
+│   └── index.cjs                        # Express API server (mounts SAML + endpoints)
+│
+├── index.html                           # Vite HTML entry
+├── vite.config.js                       # Vite config + /api+/auth dev proxy to :3000
 ├── package.json                         # Scripts and dependencies
-├── .env / .env.example                  # Optional VITE_GITHUB_* host/repo overrides for SkillSubmit
+├── .env.example                         # Server-side env template (Okta/GitHub/Anthropic)
 └── README.md
 ```
 
@@ -281,23 +294,24 @@ Configure in Azure Function / Static Web Apps settings (prefer Key Vault referen
 - `ANTHROPIC_MODEL` (for example `claude-sonnet-4-20250514`)
 - `ALLOWED_ORIGINS` (comma-separated CORS allowlist)
 
-## Deployment Overview (Azure Static Web Apps)
+## Deployment
 
-1. Provision a Static Web App (Standard SKU recommended for enterprise auth scenarios).
-2. Configure Entra ID:
-   - Replace `YOUR_TENANT_ID` in `staticwebapp.config.json` (`openIdIssuer`)
-   - Set `AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET` app settings
-3. Configure proxy secrets/settings (`ANTHROPIC_*`, `ALLOWED_ORIGINS`).
-4. Deploy via connected GitHub Actions CI/CD (recommended) or upload workflow.
+The portal runs **self-hosted on the Forcepoint internal Linux box `10.23.80.28`**, fronted by nginx, with Okta SAML 2.0 as the identity provider. (An earlier iteration targeted Azure Static Web Apps + Entra ID — that path is deprecated and `staticwebapp.config.json` has been removed.)
 
-## Self-Hosted Deployment (Linux + nginx, VPN-only)
+## Self-Hosted Deployment (Linux + nginx + Okta SAML)
 
-For internal previews on a VPN-restricted Oracle Linux / RHEL host (e.g. `http://10.23.80.28/`),
-the app can be served by nginx with the Azure Function adapted to a local Node service.
+Day-to-day update flow on the box:
 
-> **Security note:** This setup has **no Entra ID authentication** — the VPN is the perimeter.
-> EasyAuth (`staticwebapp.config.json`) is bypassed in self-host. Only use on networks where
-> every reachable client is already trusted.
+```bash
+cd ~/Forcepoint/Forcepoint-EnterpriseAI
+git pull                                    # whenever code moves
+npm run build                               # produces dist/
+sudo rsync -a --delete dist/ /var/www/ai-portal/
+sudo chown -R nginx:nginx /var/www/ai-portal
+sudo systemctl restart ai-portal-api        # only if server/*, api/*, or auth/* changed
+```
+
+> **Security model:** Okta SAML at the perimeter, session cookies for the dwell time. Dev login (`/auth/dev-login`) is auto-enabled when the SAML cert isn't installed yet, and otherwise gated by `IRIS_ALLOW_DEV_LOGIN=1`. Turn it off in production once the real SSO flow is verified end-to-end.
 
 ### Architecture
 

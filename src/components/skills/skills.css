@@ -541,20 +541,37 @@
   white-space: nowrap;
 }
 
-/* File slots */
-.ss-slots { list-style: none; margin: 0; padding: 0; }
+/* File slots — three cards side-by-side instead of a stacked list, so the
+   manifest / README / skill-md status sits in a single visual row. Each
+   slot becomes a self-contained card with file info on top and the action
+   button anchored at the bottom-right. Drops to one column on narrow screens. */
+.ss-slots {
+  list-style: none; margin: 0; padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+@media (max-width: 720px) {
+  .ss-slots { grid-template-columns: 1fr; }
+}
 .ss-slot {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: 10px var(--space-4);
-  border-bottom: 1px solid var(--border-subtle);
-  transition: background var(--dur-1) var(--ease);
+  padding: var(--space-3) var(--space-4);
+  min-height: 88px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
-.ss-slot:last-child { border-bottom: none; }
-.ss-slot.is-filled { background: var(--bg-subtle); }
-[data-theme="dark"] .ss-slot.is-filled { background: rgba(255, 255, 255, 0.025); }
+.ss-slot.is-filled {
+  background: var(--tint-teal);
+  border-color: rgba(15, 110, 86, 0.30);
+}
+[data-theme="dark"] .ss-slot.is-filled { background: rgba(93, 202, 165, 0.08); }
 
 .ss-slot-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .ss-slot-state {
@@ -589,7 +606,12 @@
   letter-spacing: -0.005em;
 }
 .ss-slot-meta { font-size: var(--fs-11); color: var(--text-tertiary); margin-top: 1px; }
-.ss-slot-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.ss-slot-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  align-self: flex-end;       /* button anchors bottom-right of the card */
+}
 .ss-slot-empty   { font-size: var(--fs-11); color: var(--text-tertiary); font-style: italic; }
 
 /* Info banner */
@@ -839,4 +861,275 @@
   font-size: var(--fs-12);
   color: var(--text-secondary);
   line-height: 1.6;
+}
+
+/* ─── Iris MVP intake (AI-471) ──────────────────────────────────────────
+   Appended to the existing skill-submit visual language. Reuses the
+   existing .ss-pipeline / .ss-dropzone primitives where possible so the
+   MVP form feels native to the rest of SkillsSection. */
+
+.ss-skel {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--fs-13);
+}
+
+/* Sign-in gate (shown when Okta session is missing) */
+.ss-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-5);
+  text-align: center;
+}
+.ss-gate-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px;
+  color: var(--teal-mid);
+  background: var(--tint-teal);
+  border-radius: 999px;
+}
+.ss-gate-title { font-size: var(--fs-15); font-weight: 600; color: var(--text-primary); }
+.ss-gate-body  { font-size: var(--fs-13); color: var(--text-secondary); max-width: 440px; line-height: 1.55; }
+
+/* Identity pill — confirms who the submission will be filed under */
+.ss-identity { display: flex; margin-bottom: var(--space-3); }
+.ss-identity-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  font-size: var(--fs-11);
+  color: var(--teal);
+  background: var(--tint-teal);
+  border: 1px solid rgba(15, 110, 86, 0.22);
+  border-radius: 999px;
+}
+.ss-identity-pill strong { font-weight: 600; }
+.ss-identity-provider {
+  margin-left: 4px; padding: 1px 7px;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--navy);
+  background: rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+}
+
+/* Dropzone — filled state + remove button (extends existing .ss-dropzone) */
+.ss-dropzone.has-file {
+  background: var(--tint-teal);
+  border-style: solid;
+  border-color: rgba(15, 110, 86, 0.4);
+}
+.ss-drop-filled {
+  width: 100%;
+  display: flex; align-items: center; gap: var(--space-3);
+  text-align: left;
+}
+.ss-drop-file-icon { color: var(--teal-mid); flex: 0 0 auto; }
+.ss-drop-file-text { flex: 1; min-width: 0; }
+.ss-drop-file-name {
+  font-size: var(--fs-14); font-weight: 600; color: var(--teal);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ss-drop-file-meta { font-size: var(--fs-12); color: var(--teal-mid); }
+.ss-drop-remove {
+  appearance: none;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card, #fff);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.ss-drop-remove:hover { color: var(--accent-rose); border-color: var(--accent-rose); }
+
+/* Optional details collapsible */
+.ss-optional-toggle {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 6px;
+  font: inherit;
+  font-size: var(--fs-12); font-weight: 500;
+  color: var(--teal-mid);
+  background: transparent;
+  border: 1px dashed transparent;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.ss-optional-toggle:hover { background: var(--tint-teal); }
+.ss-optional {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+/* Submit row */
+.ss-submit-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-3); flex-wrap: wrap;
+}
+.ss-submit-hint {
+  font-size: var(--fs-11);
+  color: var(--text-tertiary);
+  flex: 1;
+  text-align: right;
+}
+
+.ss-pipeline-sub { font-size: var(--fs-11); color: var(--text-tertiary); }
+
+/* Confirmation screen */
+.ss-confirm {
+  display: flex; flex-direction: column; gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--tint-teal);
+  border: 1px solid rgba(15, 110, 86, 0.3);
+  border-radius: var(--radius-lg, 12px);
+}
+.ss-confirm-head { display: flex; align-items: flex-start; gap: var(--space-3); }
+.ss-confirm-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  color: #fff;
+  background: var(--teal-mid);
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+.ss-confirm-title { font-size: var(--fs-15); font-weight: 700; color: var(--teal); }
+.ss-confirm-sub   { font-size: var(--fs-13); color: var(--text-primary); margin-top: 4px; }
+
+.ss-ref-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card, #fff);
+  border: 1px solid rgba(15, 110, 86, 0.3);
+  border-radius: var(--radius-md);
+}
+.ss-ref-label {
+  font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--teal-mid);
+}
+.ss-ref-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-16); font-weight: 700;
+  color: var(--teal);
+}
+.ss-ref-hint { font-size: var(--fs-11); color: var(--teal-mid); }
+
+.ss-confirm-meta {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: var(--fs-12); color: var(--text-primary);
+}
+.ss-confirm-meta li strong {
+  color: var(--text-tertiary); font-weight: 600; margin-right: 4px;
+}
+.ss-confirm-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+
+/* Iris tracking reference inside the success card (AI-471). Mirrors the
+   shape produced by /api/iris-intake so submitters quote the same kind of
+   handle regardless of which submission path they used. */
+.ss-success-ref {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: var(--space-2);
+  padding: 8px 12px;
+  background: var(--bg-card, #fff);
+  border: 1px solid rgba(15, 110, 86, 0.30);
+  border-radius: var(--radius-md);
+}
+.ss-success-ref-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--teal-mid, #0d9b78);
+}
+.ss-success-ref-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-13);
+  font-weight: 700;
+  color: var(--teal, #0f6e56);
+  background: transparent;
+  padding: 0;
+}
+
+/* Modal-level owner badge — surfaced inside ManifestModal and ReadmeModal
+   to confirm the SSO identity that will be attributed, without asking the
+   submitter to retype their email. */
+.sb-modal-owner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: var(--fs-12);
+  color: var(--text-primary, #0f172a);
+  background: var(--tint-teal, #e8f6ef);
+  border: 1px solid rgba(15, 110, 86, 0.25);
+  border-radius: var(--radius-md);
+}
+.sb-modal-owner strong {
+  font-weight: 600;
+}
+.sb-modal-owner-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--teal-mid, #0d9b78);
+}
+.sb-modal-owner-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-tertiary, #64748b);
+}
+
+/* Inline input + secondary action (e.g. "Generate PAT") — keeps the link
+   visually attached to the input rather than buried in the hint below. */
+.sb-input-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+.sb-input-row .sb-input {
+  flex: 1;
+  min-width: 0;
+}
+.sb-input-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  font-size: var(--fs-12);
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease),
+              background var(--dur-1) var(--ease),
+              color var(--dur-1) var(--ease);
+}
+.sb-input-action:hover {
+  background: var(--bg-card);
+  border-color: var(--teal-mid);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.sb-input-action:focus-visible {
+  outline: 2px solid var(--teal-mid);
+  outline-offset: 1px;
+}
+
+/* Narrow viewports: stack the action below the input. */
+@media (max-width: 600px) {
+  .sb-input-row { flex-direction: column; align-items: stretch; }
+  .sb-input-action { padding: 10px 14px; justify-content: center; }
 }
