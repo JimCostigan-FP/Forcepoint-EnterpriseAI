@@ -31,14 +31,13 @@
   gap: 12px;
   margin-bottom: 24px;
 }
-.login-brand-mark {
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700;
-  color: #fff;
-  background: var(--teal, #0f6e56);
-  border-radius: 9px;
-  letter-spacing: 0.04em;
+/* Forcepoint F-mark — colored icon (navy + teal) reads cleanly on the
+   white login card. Kept square to match the favicon. */
+.login-brand-icon {
+  width: 38px;
+  height: 38px;
+  display: block;
+  flex-shrink: 0;
 }
 .login-brand-title { font-size: 13.5px; font-weight: 700; color: var(--text-primary, #0f172a); letter-spacing: -0.005em; }
 .login-brand-sub   { font-size: 12px;   color: var(--text-tertiary, #64748b); margin-top: 2px; }

@@ -24,21 +24,16 @@
 .site-logo {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   min-width: 0;
 }
-.site-logo-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  background: var(--teal-mid);
-  color: #fff;
-  font-weight: 700;
-  font-size: var(--fs-13);
-  letter-spacing: 0.02em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Forcepoint wordmark SVG — white-on-navy, sized to sit alongside a small
+   "Enterprise AI · …" subtitle. The vertical divider visually separates
+   the brand from the product/team line. */
+.site-logo-wordmark {
+  height: 22px;
+  width: auto;
+  display: block;
   flex-shrink: 0;
 }
 .site-logo-text {
@@ -46,6 +41,8 @@
   flex-direction: column;
   line-height: 1.2;
   min-width: 0;
+  padding-left: var(--space-4);
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
 }
 .site-logo-title {
   font-size: var(--fs-14);

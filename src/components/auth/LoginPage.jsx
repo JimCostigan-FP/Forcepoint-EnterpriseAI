@@ -44,7 +44,7 @@ export default function LoginPage({ features, onDevLogin, returnTo = '/' }) {
     <div className="login-page">
       <div className="login-card">
         <div className="login-brand">
-          <div className="login-brand-mark">FP</div>
+          <img className="login-brand-icon" src="/fp-icon.png" alt="Forcepoint" />
           <div className="login-brand-text">
             <div className="login-brand-title">Forcepoint Enterprise AI</div>
             <div className="login-brand-sub">Iris Skills Portal · sign in to continue</div>
