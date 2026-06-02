@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import Header from './components/layout/Header.jsx'
-import Footer from './components/layout/Footer.jsx'
 import HomeSection from './components/sections/HomeSection.jsx'
 import HowtosSection from './components/sections/HowtosSection.jsx'
 import NewsSection from './components/sections/NewsSection.jsx'
@@ -111,8 +110,6 @@ export default function App() {
           onHandoff={handleCreatorHandoff}
         />
       </main>
-
-      <Footer />
 
       {toast && (
         <div className="toast" role="status" aria-live="polite">{toast}</div>
