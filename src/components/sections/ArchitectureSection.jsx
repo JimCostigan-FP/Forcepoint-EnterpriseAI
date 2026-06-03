@@ -2,10 +2,17 @@ import { PORTAL_DATA } from '../../data/portal.js'
 import { ArrowRight, FileIcon, ExternalLinkIcon } from '../ui/icons.jsx'
 import './ArchitectureSection.css'
 
-// Two reference PDFs live in /public and ride the page as the lead heroes.
+// Reference PDFs live in /public and ride the page as the lead heroes.
 // Using encodeURI on the filename keeps spaces and parens valid in the href
 // without forcing a rename of the source file.
 const DOC_HEROES = [
+  {
+    eyebrow: 'Policy · Active',
+    title:   'Forcepoint AI Policy',
+    meta:    'Policy · FP-IS-AI',
+    desc:    'The enterprise policy on acceptable AI use at Forcepoint — what is permitted, what requires review, and the guardrails everyone is expected to follow.',
+    file:    'Forcepoint Artificial Intelligence Policy.pdf',
+  },
   {
     eyebrow: 'Document · Draft',
     title:   'Architecture Design Document',
