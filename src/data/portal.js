@@ -205,28 +205,81 @@ export const PORTAL_DATA = {
     },
   ],
 
-  ambassador: [
-    {
-      badge: "Role", badgeClass: "badge-ambassador",
-      title: "What is an AI Ambassador?",
-      body:  "A 3–5 person team in your department that owns skill intake, design and governance. Ambassadors bridge the gap between what your team needs and what the platform can deliver."
+  // Sourced from the SharePoint "AI Ambassadors" page
+  // (sites/ArtificialIntelligence/SitePages/AI-Ambassadors.aspx), last
+  // refreshed 2026-06-03. Update here when the SharePoint roster/mission change.
+  ambassador: {
+    intro: "Discover your AI Ambassadors — leaders who drive AI innovation and support across functions. Connect with them, explore their work, and learn how they empower your AI projects and initiatives.",
+    roster: [
+      { name: "Nirav Shah",         role: "VP, Product Engineering",                                      department: "2590 Product - Rapid Deployment", email: "nshah@forcepoint.com" },
+      { name: "Jaakko Moller",       role: "Director, Network Security Engineering",                       department: "2420 Engineering - NGFW",         email: "jaakko.moller@forcepoint.com" },
+      { name: "Anthony Bennis",      role: "Sr. Manager, Product Management",                              department: "2320 Product Management - SSE",   email: "anthony.bennis@forcepoint.com" },
+      { name: "Clark Green",         role: "Vice President, Revenue Operations",                           department: "3113 Sales - Ops Mgmt",           email: "clark.green@forcepoint.com" },
+      { name: "Kavita Samuel Lover", role: "Sr. Director, Marketing Strategy and Operations",              department: "4210 Web & MOps Marketing",       email: "kavita.samuel@forcepoint.com" },
+      { name: "Todd Sheets",         role: "Data Transformation Manager",                                  department: "5500 Finance",                    email: "todd.sheets@forcepoint.com" },
+      { name: "Anabella Teverovsky", role: "Senior Director, Global Financial Reporting",                  department: "5200 Accounting",                 email: "anabella.teverovsky@forcepoint.com" },
+      { name: "Mathew Steele",       role: "Director, Enterprise Systems",                                 department: "5450 IT - Business Services",     email: "mathew.steele@forcepoint.com" },
+      { name: "Mike Thomas",         role: "Senior Director of Procurement",                               department: "5530 Procurement",                email: "mike.thomas@forcepoint.com" },
+      { name: "Mayan Goldman",       role: "Sr. Manager, Facilities",                                      department: "9100 Facilities",                 email: "mayan.goldman@forcepoint.com" },
+      { name: "Heather Johnson",     role: "Sr. Director, People Rewards, Systems and Operations",         department: "5340 HR - Global Total Rewards",  email: "heather.johnson@forcepoint.com" },
+      { name: "Peter Wilson",        role: "Sr. Manager, Cybersecurity Architecture & Security Operations", department: "2050 Solution Engineering",       email: "pwilson@forcepoint.com" },
+      { name: "Michael Leach",       role: "Director, Global Compliance",                                  department: "5600 Legal",                      email: "michael.leach@forcepoint.com" }
+    ],
+    whatTheyDo: {
+      lead: "AI Ambassadors help coordinate AI activity within a function.",
+      points: [
+        "Keep them in the loop on the AI projects you're working on — or vendor products with AI you'd like to use.",
+        "Go to them with challenges you think AI could help improve.",
+        "Ask questions and raise flags if you're not getting the results you need from AI. They can help you strategize or connect you with others who've faced the same challenges and solved them."
+      ]
     },
-    {
-      badge: "Commitment", badgeClass: "badge-new",
-      title: "What's involved?",
-      body:  "Weekly intake reviews, bi-weekly sprint ceremonies, Confluence documentation and close collaboration with the central Enterprise AI team. Approximately 3–5 hours per week."
-    },
-    {
-      badge: "Roles", badgeClass: "badge-featured",
-      title: "Three roles per team",
-      body:  "Lead (owns the board), Designer (drafts skill contracts) and Data Steward or SME (owns data scope and compliance sign-off). All trained by Enterprise AI."
-    },
-    {
-      badge: "Boards", badgeClass: "badge-ambassador",
-      title: "Current ambassador teams",
-      body:  "Security, ONE Network, DLP, Sales and Biz Dev, Operations. Each team has a dedicated Jira Kanban board and Confluence space."
-    }
-  ],
+    mission: [
+      {
+        title: "Overall Governance",
+        points: [
+          "Attend functional leadership meetings on a regular cadence",
+          "Provide project & breakthrough updates",
+          "Drive awareness of evolving needs",
+          "Attend quarterly AI Council meetings",
+          "Share function-level feedback to leadership and at quarterly AI Council meetings"
+        ]
+      },
+      {
+        title: "Grassroots Efforts",
+        points: [
+          "Be a go-to expert for AI questions",
+          "Share knowledge across the function",
+          "Champion team AI initiatives",
+          "Scale promising individual work",
+          "Escalate team work to function level",
+          "Build energy & enthusiasm around the opportunities AI offers"
+        ]
+      },
+      {
+        title: "Vendor Applications",
+        points: [
+          "Work with platform owners on AI awareness",
+          "Ensure AI Review Requests are sent",
+          "Ensure approval requirements set by the AI Council are respected; set additional guardrails as needed",
+          "Ensure the function uses AI tools successfully and appropriately, especially for complex matters with human-in-the-loop concerns",
+          "Monitor value and resolve issues",
+          "Provide feedback to the AI Council"
+        ]
+      },
+      {
+        title: "Orchestration Projects",
+        points: [
+          "Identify high-value repeat-work opportunities",
+          "Develop business cases",
+          "Work with teams to define workflows & hand-offs; guide them to viable solutions",
+          "Organize solution testing",
+          "Support workflow transformation",
+          "Create or oversee change-management materials as needed",
+          "Monitor and report on key metrics identified in the business case"
+        ]
+      }
+    ]
+  },
 
   architecture: [
     {

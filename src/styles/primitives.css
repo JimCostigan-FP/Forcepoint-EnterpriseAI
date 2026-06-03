@@ -296,6 +296,35 @@
 .amb-card h3 { font-size: var(--fs-14); font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
 .amb-card p  { font-size: var(--fs-13); color: var(--text-secondary); line-height: 1.55; }
 
+/* Ambassador roster + mission (sourced from the SharePoint AI Ambassadors page) */
+.amb-subhead {
+  font-size: var(--fs-16);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin: var(--space-6) 0 var(--space-4);
+}
+.amb-role  { font-weight: 600; color: var(--text-primary) !important; }
+.amb-dept  { font-size: var(--fs-12) !important; color: var(--text-tertiary) !important; }
+.amb-email {
+  font-size: var(--fs-13);
+  color: var(--teal-mid);
+  text-decoration: none;
+  word-break: break-all;
+  margin-top: 2px;
+}
+.amb-email:hover { text-decoration: underline; }
+.amb-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.amb-list li { font-size: var(--fs-13); color: var(--text-secondary); line-height: 1.5; }
+.amb-prose { margin-bottom: var(--space-5); max-width: 760px; }
+.amb-prose p { font-size: var(--fs-14); color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-3); }
+
 /* ── LIST ITEMS ─────────────────────────────────────────── */
 .list-items {
   background: var(--bg-surface);
