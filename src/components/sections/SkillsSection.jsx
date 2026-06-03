@@ -115,39 +115,41 @@ export default function SkillsSection({
 
       {/* ── Skill creator feature tile ─────────────────────────
           Primary entry to /skill-creator. Sits at the bottom of the
-          Skills Library — submitters browse approved skills first,
-          then land on the CTA to author a new one alongside the
-          rest of the skill-authoring affordances. */}
-      <div className="hero-feature">
-        <div className="hero-feature-body">
-          <span className="hero-feature-eyebrow">
-            <SparkleIcon size={12} />
-            New · Build a skill
-          </span>
-          <div className="hero-feature-title">
-            Shape an idea into an enterprise skill — without leaving this portal.
+          Skills Library. HIDDEN for now — the skill creator flow is
+          not ready to ship. Flip the `false` guard back to render it
+          once the feature is complete. */}
+      {false && (
+        <div className="hero-feature">
+          <div className="hero-feature-body">
+            <span className="hero-feature-eyebrow">
+              <SparkleIcon size={12} />
+              New · Build a skill
+            </span>
+            <div className="hero-feature-title">
+              Shape an idea into an enterprise skill — without leaving this portal.
+            </div>
+            <div className="hero-feature-desc">
+              A guided refiner asks the open-ended questions, you preview the SKILL.md, fire a sample prompt, see the review tier, and submit. One page, one path.
+            </div>
+            <div className="hero-feature-bullets">
+              <span className="hero-feature-bullet">No round-trip through Claude</span>
+              <span className="hero-feature-bullet">Test before submit</span>
+              <span className="hero-feature-bullet">Tier &amp; SLA shown at creation</span>
+            </div>
           </div>
-          <div className="hero-feature-desc">
-            A guided refiner asks the open-ended questions, you preview the SKILL.md, fire a sample prompt, see the review tier, and submit. One page, one path.
-          </div>
-          <div className="hero-feature-bullets">
-            <span className="hero-feature-bullet">No round-trip through Claude</span>
-            <span className="hero-feature-bullet">Test before submit</span>
-            <span className="hero-feature-bullet">Tier &amp; SLA shown at creation</span>
+          <div className="hero-feature-actions">
+            <button
+              type="button"
+              className="btn btn-primary btn-lg"
+              onClick={() => onShowSection?.('skill-creator')}
+            >
+              <SparkleIcon size={14} />
+              Open skill creator
+              <ArrowRight size={14} />
+            </button>
           </div>
         </div>
-        <div className="hero-feature-actions">
-          <button
-            type="button"
-            className="btn btn-primary btn-lg"
-            onClick={() => onShowSection?.('skill-creator')}
-          >
-            <SparkleIcon size={14} />
-            Open skill creator
-            <ArrowRight size={14} />
-          </button>
-        </div>
-      </div>
+      )}
     </section>
   )
 }
