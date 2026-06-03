@@ -23,7 +23,7 @@
   .portal-body { padding: var(--space-5) var(--space-4) var(--space-7); }
 }
 
-/* ── Auth splash — shown while /api/auth/me is in flight (AI-468) ─── */
+/* ── Auth splash — shown while /api/auth/me is in flight ──────── */
 .auth-splash {
   min-height: 100vh;
   display: flex;

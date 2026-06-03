@@ -1,15 +1,12 @@
 /**
- * api/iris-intake — drops a submitted zip into the Forcepoint Enterprise AI
- * skills repository under a triage folder for Jim Costigan to promote.
+ * api/fip-intake — drops a submitted zip into the Forcepoint Intelligence
+ * Platform skills repository under a triage folder for governance review.
  *
- * Jira: AI-471 (Iris Skills Portal MVP — Low-Friction Skill Intake to GitHub)
- *
- * MVP contract per Mathew Steele's May 27 sync: name + zip is the only
- * required input from the submitter. Everything else is optional and stays
- * out of the validation path. Identity is taken from the Okta SSO session
- * (AI-468) so the form ships the user a tracking reference and a confirmation,
- * with the upload happening server-side using a service token (GitHub auth
- * for end-user PATs is the larger AI-453 question).
+ * MVP contract: name + zip is the only required input from the submitter.
+ * Everything else is optional and stays out of the validation path.
+ * Identity is taken from the Okta SSO session so the form returns a
+ * tracking reference and confirmation; the upload happens server-side
+ * using a service token (long-term GitHub auth is tracked separately).
  *
  * Request body (JSON):
  *   {
@@ -43,7 +40,7 @@ const MAX_ZIP_BYTES = 25 * 1024 * 1024; // 25 MB hard cap on the intake payload
 function newReference() {
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `IRIS-${ts}-${rand}`;
+  return `FIP-${ts}-${rand}`;
 }
 
 function sanitiseFilename(input) {
@@ -65,7 +62,7 @@ function ghRequest(path, { method = "GET", body = null } = {}) {
       "Authorization":         `Bearer ${HOPPER_TOKEN}`,
       "Accept":                "application/vnd.github+json",
       "X-GitHub-Api-Version":  "2022-11-28",
-      "User-Agent":            "Iris-Intake/1.0",
+      "User-Agent":            "FIP-Intake/1.0",
       ...(payload ? {
         "Content-Type":   "application/json",
         "Content-Length": payload.length,
@@ -160,7 +157,7 @@ module.exports = async function (context, req) {
     {
       method: "PUT",
       body: {
-        message: `iris: skill submission ${ref} (${submitter})`,
+        message: `fip: skill submission ${ref} (${submitter})`,
         branch:  GITHUB_BRANCH,
         content: String(zipBase64).replace(/\s+/g, ""),
       },
@@ -182,7 +179,7 @@ module.exports = async function (context, req) {
     {
       method: "PUT",
       body: {
-        message: `iris: metadata for ${ref}`,
+        message: `fip: metadata for ${ref}`,
         branch:  GITHUB_BRANCH,
         content: metaContent,
       },

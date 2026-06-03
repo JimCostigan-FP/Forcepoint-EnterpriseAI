@@ -1,6 +1,5 @@
 /**
- * LoginPage — sign-in surface for the Iris portal.
- * Jira: AI-468 (SSO/Okta Login Integration) · AI-476 (Okta app build)
+ * LoginPage — sign-in surface for the Forcepoint Intelligence Platform.
  *
  * Two paths:
  *   1. "Continue with Forcepoint SSO" → /auth/login → Okta SAML 2.0 SSO.
@@ -78,7 +77,7 @@ export default function LoginPage({ features, onDevLogin, returnTo = '/' }) {
             <ArrowRight size={16} className="login-option-arrow" />
           </a>
 
-          {/* Dev login is hidden in production (IRIS_ALLOW_DEV_LOGIN=0). */}
+          {/* Dev login is hidden in production (FIP_ALLOW_DEV_LOGIN=0). */}
           {devEnabled && (
             <button
               type="button"

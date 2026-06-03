@@ -1,6 +1,5 @@
 /**
  * useCurrentUser — reads the active Okta SSO session from the portal API.
- * Jira: AI-468 — SSO/Okta Login Integration for the Skills Portal
  *
  * Calls /api/auth/me, which is served by the Node API on the box and reads
  * the express-session populated by the Okta SAML ACS handler (or by the

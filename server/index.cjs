@@ -1,10 +1,10 @@
 /**
- * Iris portal API server — mounts the Okta SAML routes, express-session,
- * and the application endpoints (/api/ask, /api/iris-intake, /api/health).
+ * FIP portal API server — mounts the Okta SAML routes, express-session,
+ * and the application endpoints (/api/ask, /api/fip-intake, /api/health).
  *
  * Target deployment: Forcepoint internal Linux box at 10.23.80.28, fronted
- * by nginx (Benson owns DNS). For local dev, omit the SAML env vars and
- * the server enables /auth/dev-login as the sign-in path — see auth/okta.cjs.
+ * by nginx. For local dev, omit the SAML env vars and the server enables
+ * /auth/dev-login as the sign-in path — see auth/okta.cjs.
  */
 
 const express = require("express");
@@ -12,9 +12,9 @@ const session = require("express-session");
 const path    = require("path");
 const fs      = require("fs");
 
-const askFn        = require("../api/ask/index.js");
-const irisIntakeFn = require("../api/iris-intake/index.js");
-const okta         = require("../auth/okta.cjs");
+const askFn       = require("../api/ask/index.js");
+const fipIntakeFn = require("../api/fip-intake/index.js");
+const okta        = require("../auth/okta.cjs");
 
 const app = express();
 
@@ -23,14 +23,14 @@ const app = express();
 // `secure` cookies start being required.
 app.set("trust proxy", 1);
 
-// Iris zip uploads ship as base64 JSON — raise the limit accordingly (the
+// FIP zip uploads ship as base64 JSON — raise the limit accordingly (the
 // handler also enforces a 25 MB payload cap).
 app.use(express.json({ limit: "35mb" }));
 
 // ── Session (Okta SAML state lives here) ───────────────────────────────
 // SESSION_SECRET must be set in production. The fallback rotates each boot,
 // invalidating all sessions on restart — fine for first run, not for prod.
-const SESSION_SECRET = process.env.SESSION_SECRET || `iris-dev-${Date.now()}`;
+const SESSION_SECRET = process.env.SESSION_SECRET || `fip-dev-${Date.now()}`;
 
 // Cookie security tracks the *deployment scheme*, not NODE_ENV. On the
 // current HTTP-only box (http://10.23.80.28), `secure: true` would silently
@@ -43,7 +43,7 @@ const cookieSecure  = process.env.COOKIE_SECURE === "1" ? true
                     : portalIsHttps;
 
 app.use(session({
-  name:    "iris.sid",
+  name:    "fip.sid",
   secret:  SESSION_SECRET,
   resave:  false,
   saveUninitialized: false,
@@ -93,8 +93,8 @@ function adapt(handlerFn) {
 app.post("/api/ask",    okta.requireAuth, adapt(askFn));
 app.options("/api/ask",                   adapt(askFn));
 
-app.post("/api/iris-intake",    okta.requireAuth, adapt(irisIntakeFn));
-app.options("/api/iris-intake",                   adapt(irisIntakeFn));
+app.post("/api/fip-intake",    okta.requireAuth, adapt(fipIntakeFn));
+app.options("/api/fip-intake",                   adapt(fipIntakeFn));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
@@ -115,9 +115,9 @@ if (fs.existsSync(distDir)) {
 const PORT = process.env.PORT  || 3000;
 const HOST = process.env.HOST  || "127.0.0.1";
 app.listen(PORT, HOST, () => {
-  console.log(`Iris API listening on ${HOST}:${PORT}`);
+  console.log(`FIP API listening on ${HOST}:${PORT}`);
   if (!okta.samlConfigured) {
     console.warn("⚠  Okta SAML is not yet configured (SAML_IDP_CERT missing).");
-    console.warn("   Dev login is enabled — sign in via /auth/dev-login. Disable once Talton ships the cert.");
+    console.warn("   Dev login is enabled — sign in via /auth/dev-login.");
   }
 });

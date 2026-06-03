@@ -6,7 +6,7 @@
  * on <html> and persists the user's pick in localStorage.
  *
  * Resolution order:
- *   1. localStorage `iris.theme`  ('light' | 'dark')
+ *   1. localStorage `fip.theme`  ('light' | 'dark')
  *   2. window.matchMedia('(prefers-color-scheme: dark)')
  *   3. light (fallback)
  *
@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-const STORAGE_KEY = 'iris.theme'
+const STORAGE_KEY = 'fip.theme'
 
 export function resolveInitialTheme() {
   if (typeof window === 'undefined') return 'light'

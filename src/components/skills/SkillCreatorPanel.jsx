@@ -10,7 +10,7 @@ export default function SkillCreatorPanel({ onLaunch }) {
         <div>
           <div className="sc-entry-title">Skill creator — guided draft, test, and submit</div>
           <div className="sc-entry-sub">
-            Build, test, and submit a skill without leaving Iris. A refiner asks the open-ended questions; you preview the SKILL.md, fire a sample prompt, see the review tier, and hand off to governance — one page, one path.
+            Build, test, and submit a skill without leaving the portal. A refiner asks the open-ended questions; you preview the SKILL.md, fire a sample prompt, see the review tier, and hand off to governance — one page, one path.
           </div>
           <div className="sc-entry-bullets">
             <span className="sc-entry-bullet">No round-trip through Claude</span>

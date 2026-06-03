@@ -67,7 +67,7 @@ export function buildReadme({ name, version, description, ownerEmail }) {
     ``,
     `**Authored by:** ${ownerEmail}  `,
     `**Date:** ${today}  `,
-    `**Source:** Iris skill-creator (template ${TEMPLATE_VERSION})`,
+    `**Source:** Forcepoint Intelligence Platform skill-creator (template ${TEMPLATE_VERSION})`,
     ``,
     `## What this skill does`,
     ``,

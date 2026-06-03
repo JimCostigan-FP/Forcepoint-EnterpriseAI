@@ -330,7 +330,7 @@ export default function SkillCreatorSection({ active, onShowSection, onHandoff }
               <li>Tier is heuristic; final tier set in engineering review.</li>
               <li>Telemetry emits to console; real sink TBD.</li>
               <li>Submitter identity is placeholder until Okta SSO is wired.</li>
-              <li>Submission reuses the existing GHE PR flow — no separate AI-471 endpoint exists yet.</li>
+              <li>Submission reuses the existing GHE PR flow — no separate creator endpoint exists yet.</li>
             </ul>
           </div>
         </div>

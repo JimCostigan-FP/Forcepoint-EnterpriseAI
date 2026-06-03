@@ -946,7 +946,7 @@
   line-height: 1.6;
 }
 
-/* ─── Iris MVP intake (AI-471) ──────────────────────────────────────────
+/* ─── FIP MVP intake ────────────────────────────────────────────────────
    Appended to the existing skill-submit visual language. Reuses the
    existing .ss-pipeline / .ss-dropzone primitives where possible so the
    MVP form feels native to the rest of SkillsSection. */
@@ -1112,8 +1112,8 @@
 }
 .ss-confirm-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
-/* Iris tracking reference inside the success card (AI-471). Mirrors the
-   shape produced by /api/iris-intake so submitters quote the same kind of
+/* FIP tracking reference inside the success card. Mirrors the
+   shape produced by /api/fip-intake so submitters quote the same kind of
    handle regardless of which submission path they used. */
 .ss-success-ref {
   display: flex;

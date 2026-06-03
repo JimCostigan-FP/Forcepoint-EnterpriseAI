@@ -1,29 +1,23 @@
 /**
- * Okta SAML 2.0 SSO — runs on the Forcepoint Enterprise AI Linux box (10.23.80.28).
- * Jira: AI-476 (Okta SAML app, owned by Talton Walker) · AI-468 (portal wiring).
+ * Okta SAML 2.0 SSO — runs on the Forcepoint Intelligence Platform server.
  *
- * Talton's SAML app provisions these IdP-side values (already pasted):
- *   - Identity Provider Single Sign-On URL:
- *       https://fp.okta.com/app/fp_forcepointenterpriseaiportalpending_1/exk23lnhuwbxNQ8YI1d8/sso/saml
- *   - Identity Provider Issuer:
- *       http://www.okta.com/exk23lnhuwbxNQ8YI1d8
- *   - Identity Provider X.509 Certificate (pending — needed for response signature verification)
- *
- * SP-side values we publish back to Okta:
- *   - ACS / Single sign-on URL : http://10.23.80.28/auth/saml/acs
- *   - Audience URI (SP Entity ID): http://10.23.80.28/iris
- *   - RelayState: blank (we drive it from /auth/login)
+ * IdP-side values come from the Okta SAML app (sso URL, issuer, X.509 cert).
+ * SP-side values we publish back:
+ *   - ACS / Single sign-on URL : ${PORTAL_BASE_URL}/auth/saml/acs
+ *   - Audience URI (SP Entity ID): ${PORTAL_BASE_URL}/fip
+ *     (live deploys can override via SAML_SP_ENTITY_ID — match what's
+ *     registered as Audience URI on the Okta SAML app, or login fails)
+ *   - RelayState: blank (driven by /auth/login)
  *
  * Flow:
  *   GET  /auth/login        → redirect to Okta with a SAMLRequest
  *   POST /auth/saml/acs     → validate SAMLResponse, mint session, redirect home
  *   GET  /auth/logout       → destroy session, redirect home
  *   GET  /api/auth/me       → identity for the React client + feature flags
- *   POST /auth/dev-login    → bypass (gated by IRIS_ALLOW_DEV_LOGIN)
+ *   POST /auth/dev-login    → bypass (gated by FIP_ALLOW_DEV_LOGIN)
  *
- * Local dev / pilot: until the X.509 cert lands, samlConfigured stays false
- * and devLoginEnabled is on automatically, so the portal is still usable
- * via /auth/dev-login.
+ * Until the X.509 cert lands, samlConfigured stays false and devLoginEnabled
+ * is on automatically, so the portal is still usable via /auth/dev-login.
  */
 
 const { SAML } = require('@node-saml/node-saml')
@@ -67,15 +61,15 @@ function loadIdpCert() {
 const SAML_IDP_CERT = loadIdpCert()
 
 const SAML_SP_ACS_URL    = process.env.SAML_SP_ACS_URL    || `${PORTAL_BASE_URL}/auth/saml/acs`
-const SAML_SP_ENTITY_ID  = process.env.SAML_SP_ENTITY_ID  || `${PORTAL_BASE_URL}/iris`
+const SAML_SP_ENTITY_ID  = process.env.SAML_SP_ENTITY_ID  || `${PORTAL_BASE_URL}/fip`
 
-const DEV_USER_EMAIL = process.env.IRIS_DEV_USER_EMAIL || 'dev.user@forcepoint.com'
-const DEV_USER_NAME  = process.env.IRIS_DEV_USER_NAME  || 'Dev User'
+const DEV_USER_EMAIL = process.env.FIP_DEV_USER_EMAIL || 'dev.user@forcepoint.com'
+const DEV_USER_NAME  = process.env.FIP_DEV_USER_NAME  || 'Dev User'
 
 const samlConfigured  = Boolean(SAML_IDP_CERT && SAML_IDP_SSO_URL && SAML_IDP_ENTITY_ID)
 // Dev login auto-on when SAML isn't fully wired, so a freshly-installed
-// box still has a working sign-in path. Force on/off with IRIS_ALLOW_DEV_LOGIN.
-const devLoginEnabled = (process.env.IRIS_ALLOW_DEV_LOGIN === '1') || !samlConfigured
+// box still has a working sign-in path. Force on/off with FIP_ALLOW_DEV_LOGIN.
+const devLoginEnabled = process.env.FIP_ALLOW_DEV_LOGIN === '1' || !samlConfigured
 
 // ── Lazy SAML client ───────────────────────────────────────────────────
 let _saml
@@ -185,7 +179,7 @@ function mountAuthRoutes(app, deps = {}) {
       const missing = SAML_IDP_CERT ? '' : ' (<code>SAML_IDP_CERT</code> is empty)'
       return renderSamlUnavailable(res, 503,
         `The Okta SAML app is not yet fully configured on this server${missing}.`,
-        'Talton Walker is provisioning the Okta SAML app under AI-476. Once the X.509 ' +
+        'The Okta SAML app is being provisioned. Once the X.509 ' +
         'signing certificate lands in <code>/etc/ai-portal/api.env</code> as ' +
         '<code>SAML_IDP_CERT</code> and the service is restarted, this button will ' +
         'redirect to <code>' + SAML_IDP_SSO_URL + '</code>.')
@@ -237,7 +231,7 @@ function mountAuthRoutes(app, deps = {}) {
   // GET /auth/logout — local session destroy (no SP-initiated SLO yet)
   app.get('/auth/logout', (req, res) => {
     req.session.destroy(() => {
-      res.clearCookie('iris.sid')
+      res.clearCookie('fip.sid')
       res.redirect('/')
     })
   })

@@ -1,7 +1,6 @@
 /**
  * api/ask/index.js — Anthropic API proxy for the portal "Ask" experience.
  * Owner: IT Enterprise AI team · ITEnterpriseAIteam@forcepoint.com
- * Jira:  AI-110
  *
  * This handler sits between the browser and the Anthropic API so that:
  *  - The API key never reaches the browser
@@ -10,18 +9,19 @@
  *  - Rate limiting and logging can be applied centrally
  *
  * Runs under the Node Express server (server/index.cjs) on the internal
- * Linux box at 10.23.80.28; the (context, req) calling convention is kept
- * so the handler stays portable if we ever lift it to a serverless target.
+ * Linux host; the (context, req) calling convention is kept so the handler
+ * stays portable if it ever moves to a serverless target.
  *
  * Environment variables (set in /etc/ai-portal/api.env):
  *   ANTHROPIC_API_KEY   — your Anthropic API key
- *   ANTHROPIC_MODEL     — model ID (default: claude-sonnet-4-20250514)
+ *   ANTHROPIC_MODEL     — model ID (default: claude-sonnet-4-6)
  *   ALLOWED_ORIGINS     — comma-separated allowed CORS origins (e.g. http://10.23.80.28)
  */
 
 const https = require("https");
 
-const MODEL     = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
+// Default model bumped to Sonnet 4.6; override per-deploy via api.env.
+const MODEL     = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 const API_KEY   = process.env.ANTHROPIC_API_KEY || "";
 const MAX_TOKENS = 1000;
 

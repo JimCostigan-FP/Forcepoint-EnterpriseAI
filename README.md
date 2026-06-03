@@ -19,7 +19,7 @@ This project exists to provide a single trusted destination for:
 - Self-hosted Node/Express API on the internal box at `10.23.80.28`, fronted by nginx
 - Server-side proxy endpoint for Anthropic API calls at `/api/ask`
 - Content-driven UI powered by versioned source data
-- Iris MVP skill intake (AI-471): low-friction `name + zip` form → server-side commit to the `EAI-claude-skills` GitHub triage folder
+- FIP MVP skill intake: low-friction `name + zip` form → server-side commit to the `EAI-claude-skills` GitHub triage folder
 
 ## Portal Sections
 
@@ -47,7 +47,7 @@ This project exists to provide a single trusted destination for:
 - Runtime: Node.js 20 + Express (`server/index.cjs`), running under systemd as `ai-portal-api`
 - Endpoints:
   - `/api/auth/me`        — Okta SAML session identity + feature flags
-  - `/api/iris-intake`    — receives the submitted zip, commits it to the GitHub triage folder
+  - `/api/fip-intake`    — receives the submitted zip, commits it to the GitHub triage folder
   - `/api/ask`            — Anthropic API proxy (keeps the API key server-side)
   - `/api/health`         — liveness probe
 - The Anthropic key, GitHub hopper token, SAML cert, and session secret live in `/etc/ai-portal/api.env` (root-owned, mode 600).
@@ -56,10 +56,10 @@ This project exists to provide a single trusted destination for:
 
 - Deployment: internal Linux host `10.23.80.28`, fronted by nginx on port 80
 - Auth: **Okta SAML 2.0** (org-level auth server at `https://fp.okta.com`); `auth/okta.cjs` wires `@node-saml/node-saml` into Express
-- Session: `express-session` (8-hour `iris.sid` cookie, `httpOnly + sameSite=lax`; `secure` flag derived from `PORTAL_BASE_URL` scheme)
-- Route protection: `okta.requireAuth` middleware gates `/api/iris-intake` and `/api/ask`; the React app gates the entire UI behind a LoginPage when anonymous
+- Session: `express-session` (8-hour `fip.sid` cookie, `httpOnly + sameSite=lax`; `secure` flag derived from `PORTAL_BASE_URL` scheme)
+- Route protection: `okta.requireAuth` middleware gates `/api/fip-intake` and `/api/ask`; the React app gates the entire UI behind a LoginPage when anonymous
 - Security headers + SPA fallback configured in `/etc/nginx/conf.d/ai-portal.conf`
-- Dev login: `/auth/dev-login` bypasses Okta for QA — auto-enabled when SAML isn't configured, force-toggle with `IRIS_ALLOW_DEV_LOGIN`
+- Dev login: `/auth/dev-login` bypasses Okta for QA — auto-enabled when SAML isn't configured, force-toggle with `FIP_ALLOW_DEV_LOGIN`
 
 ## Repository Structure
 
@@ -97,7 +97,7 @@ Forcepoint-EnterpriseAI/
 │       │   └── icons.jsx                # SVG icon set (single source for all icons)
 │       │
 │       ├── skills/
-│       │   ├── SkillSubmit.jsx          # Iris MVP intake (name + zip → /api/iris-intake)
+│       │   ├── SkillSubmit.jsx          # FIP MVP intake (name + zip → /api/fip-intake)
 │       │   ├── SkillBuilder.jsx         # In-browser SKILL.md ZIP authoring tool
 │       │   └── GoSacBuilder.jsx         # Bonus live-data skill walkthrough
 │       │
@@ -114,7 +114,7 @@ Forcepoint-EnterpriseAI/
 │
 ├── api/
 │   ├── ask/index.js                     # Anthropic API proxy (server-side key)
-│   └── iris-intake/index.js             # Receives zip, commits to GitHub triage folder
+│   └── fip-intake/index.js             # Receives zip, commits to GitHub triage folder
 │
 ├── auth/
 │   └── okta.cjs                         # Okta SAML 2.0 SSO via @node-saml/node-saml
@@ -311,7 +311,7 @@ sudo chown -R nginx:nginx /var/www/ai-portal
 sudo systemctl restart ai-portal-api        # only if server/*, api/*, or auth/* changed
 ```
 
-> **Security model:** Okta SAML at the perimeter, session cookies for the dwell time. Dev login (`/auth/dev-login`) is auto-enabled when the SAML cert isn't installed yet, and otherwise gated by `IRIS_ALLOW_DEV_LOGIN=1`. Turn it off in production once the real SSO flow is verified end-to-end.
+> **Security model:** Okta SAML at the perimeter, session cookies for the dwell time. Dev login (`/auth/dev-login`) is auto-enabled when the SAML cert isn't installed yet, and otherwise gated by `FIP_ALLOW_DEV_LOGIN=1`. Turn it off in production once the real SSO flow is verified end-to-end.
 
 ### Architecture
 

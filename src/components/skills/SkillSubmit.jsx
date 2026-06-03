@@ -9,14 +9,19 @@ import {
 import './skills.css'
 
 // Defaults target Forcepoint's GitHub Enterprise (BTS/EAI-claude-skills).
-// Override host/owner/repo via VITE_GITHUB_* in .env. The PAT is collected
-// per-submission in the UI and validated against the submitter's email —
-// never bundled, never persisted.
+// Override host/owner/repo via VITE_GITHUB_* in .env.
+//
+// PAT handling — interim: all submissions commit through a single shared
+// token (VITE_GITHUB_HOPPER_TOKEN) provided at build time, so submitters
+// don't have to mint and paste their own. This is replaced when the
+// service-user account is provisioned. The token ships in the JS bundle,
+// so the portal must remain behind SSO + the internal VPN until then.
 const GITHUB_CONFIG = {
   HOST:  import.meta.env.VITE_GITHUB_HOST  || 'https://github.cicd.cloud.fpdev.io',
   API:   import.meta.env.VITE_GITHUB_API   || 'https://github.cicd.cloud.fpdev.io/api/v3',
   OWNER: import.meta.env.VITE_GITHUB_OWNER || 'BTS',
   REPO:  import.meta.env.VITE_GITHUB_REPO  || 'EAI-claude-skills',
+  HOPPER_TOKEN: import.meta.env.VITE_GITHUB_HOPPER_TOKEN || '',
 }
 
 const PIPELINE_STEPS = [
@@ -42,45 +47,10 @@ async function checkDocQuality(inventory, skillName)  {
 
 const pause = ms => new Promise(r => setTimeout(r, ms))
 
-// ── GITHUB IDENTITY CHECK — confirms the PAT belongs to the submitter ──
-// Calls GET /user and GET /user/emails; requires the PAT to have `user:email`
-// scope. Falls back to user.email (profile) when /user/emails is forbidden.
-async function verifyGitHubIdentity(pat, formEmail) {
-  const headers = {
-    'Authorization':        `Bearer ${pat}`,
-    'Accept':               'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  }
-  try {
-    const userRes = await fetch(`${GITHUB_CONFIG.API}/user`, { headers })
-    if (userRes.status === 401) return { ok: false, error: 'GitHub token is invalid or expired.' }
-    if (!userRes.ok)            return { ok: false, error: `GitHub auth check failed (HTTP ${userRes.status}).` }
-    const user = await userRes.json()
-
-    const emailRes = await fetch(`${GITHUB_CONFIG.API}/user/emails`, { headers })
-    let verifiedEmails = []
-    if (emailRes.ok) {
-      const list = await emailRes.json()
-      verifiedEmails = list.filter(e => e.verified).map(e => e.email.toLowerCase())
-    } else if (user.email) {
-      verifiedEmails = [user.email.toLowerCase()]
-    } else {
-      return { ok: false, error: 'Token is missing the user:email scope. Mint a new PAT with repo + user:email scopes.' }
-    }
-
-    if (!verifiedEmails.includes(formEmail.toLowerCase())) {
-      return { ok: false, error: `Token belongs to ${user.login}, whose verified emails do not include ${formEmail}. Use a token from the GitHub account tied to your Forcepoint email.` }
-    }
-    return { ok: true, login: user.login }
-  } catch (e) {
-    return { ok: false, error: e.message || 'Network error reaching GitHub.' }
-  }
-}
-
 // ── GITHUB PUSH — uploads all three files from inventory ──
-// `extras` carries Iris MVP enrichments (AI-471): the IRIS-style tracking
-// reference, optional trust tier, and optional use-case text. All three
-// surface in the PR body so reviewers see the routing/context upfront.
+// `extras` carries the optional submission enrichments — the FIP-style
+// tracking reference, trust tier, and use-case text — all of which surface
+// in the PR body so reviewers see the routing/context upfront.
 async function pushInventoryToGitHub(skillName, version, inventory, committer, intent, pat, extras = {}) {
   const apiBase = `${GITHUB_CONFIG.API}/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}`
   const branch  = `skill/${skillName}/v${version}`
@@ -143,7 +113,7 @@ async function pushInventoryToGitHub(skillName, version, inventory, committer, i
       `${irisRef}${tierLine}` +
       `\n### What does this skill do?\n${intent}\n` +
       useCaseBlock +
-      `\n---\n_Submitted via the Forcepoint Enterprise AI (Iris). Files at \`skills/${skillName}/v${version}/\`._`
+      `\n---\n_Submitted via the Forcepoint Intelligence Platform. Files at \`skills/${skillName}/v${version}/\`._`
 
     const prRes = await fetch(`${apiBase}/pulls`, {
       method: 'POST', headers,
@@ -467,15 +437,14 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
   const [name,      setName]      = useState('')
   const [email,     setEmail]     = useState('')
   const [dept,      setDept]      = useState('')
-  const [pat,       setPat]       = useState('')
   const [intent,    setIntent]    = useState('')
   const [skillName, setSkillName] = useState('')
   const [version,   setVersion]   = useState('1.0')
-  // ── Iris MVP enrichments (AI-471) — optional context that feeds the PR body
+  // ── Optional context that feeds the PR body
   const [tier,      setTier]      = useState('')
   const [useCase,   setUseCase]   = useState('')
 
-  // ── Identity pre-fill from Okta (AI-468) — name and email come straight
+  // ── Identity pre-fill from Okta — name and email come straight
   // from the SSO session so the submitter isn't re-typing what we already
   // know. They can still override (e.g. preferred form of their name).
   useEffect(() => {
@@ -585,7 +554,6 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
     if (!name.trim())                                          { setValMsg('Full name is required.'); return false }
     if (!email.trim() || !email.includes('@forcepoint.com'))   { setValMsg('A valid @forcepoint.com email is required.'); return false }
     if (!dept)                                                 { setValMsg('Please select your department.'); return false }
-    if (!pat.trim())                                           { setValMsg('GitHub personal access token is required.'); return false }
     if (!intent.trim() || intent.trim().length < 20)           { setValMsg('Please describe what the skill does (at least 20 characters).'); return false }
     if (!skillName.trim())                                     { setValMsg('Skill name is required.'); return false }
     if (!/^[a-z0-9-]+$/.test(skillName.trim()))                { setValMsg('Skill name must be lowercase letters, numbers, and hyphens only.'); return false }
@@ -600,17 +568,17 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
   const submit = async () => {
     setInfoMsg(null)
     if (!validateForm()) return
-    setValMsg('Verifying your GitHub identity…')
-    const identity = await verifyGitHubIdentity(pat.trim(), email.trim())
-    if (!identity.ok) { setValMsg(identity.error); return }
+    if (!GITHUB_CONFIG.HOPPER_TOKEN) {
+      setValMsg('GitHub hopper token is not configured on this build. Set VITE_GITHUB_HOPPER_TOKEN in .env and rebuild.')
+      return
+    }
     setValMsg(null)
 
-    // Two refs: legacy SKL-* (kept for backward compatibility with anything
-    // that already references it) and an IRIS-* tracking ref (AI-471) that
-    // matches the format the low-friction /api/iris-intake endpoint emits,
-    // so submitters across both paths quote the same shape of identifier.
+    // Two refs: legacy SKL-* (kept for back-compat) and a FIP-* tracking
+    // ref that matches the format the low-friction /api/fip-intake endpoint
+    // emits, so submitters across both paths quote the same identifier shape.
     const ref     = 'SKL-' + Date.now().toString(36).toUpperCase().slice(-6)
-    const irisRef = 'IRIS-' + Date.now().toString(36).toUpperCase() +
+    const irisRef = 'FIP-' + Date.now().toString(36).toUpperCase() +
                     '-' + Math.random().toString(36).slice(2, 6).toUpperCase()
     const sName = skillName.trim()
     const sVer  = version.trim()
@@ -646,7 +614,7 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
     setStep(4, 'running', 'assigned')
     setStep(5, 'running', 'uploading…')
     const committer = `${name} (${dept}) <${email}>`
-    const result    = await pushInventoryToGitHub(sName, sVer, inventory, committer, intent.trim(), pat.trim(),
+    const result    = await pushInventoryToGitHub(sName, sVer, inventory, committer, intent.trim(), GITHUB_CONFIG.HOPPER_TOKEN,
       { irisRef, tier: tier || null, useCase: useCase.trim() || null })
 
     if (!result.ok) {
@@ -725,7 +693,7 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
                 </div>
               </div>
 
-              {/* Identity pill (AI-468) — confirms the Okta-signed-in user
+              {/* Identity pill — confirms the Okta-signed-in user
                   who will be attributed on the PR. Pre-fills name + email
                   in the inputs below; the submitter can still edit either. */}
               {user?.email && (
@@ -763,36 +731,6 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
                       <option key={d}>{d}</option>
                     ))}
                   </select>
-                </div>
-
-                <div className="sb-field" style={{ gridColumn: 'span 12' }}>
-                  <label className="sb-label">
-                    GitHub personal access token <span className="sb-opt">used once per submission, not stored</span>
-                  </label>
-                  <div className="sb-input-row">
-                    <input
-                      type="password"
-                      className="sb-input"
-                      placeholder="Paste your Enterprise GitHub PAT"
-                      value={pat}
-                      onChange={e => setPat(e.target.value)}
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                    <a
-                      className="sb-input-action"
-                      href={`${GITHUB_CONFIG.HOST}/settings/tokens/new?scopes=repo,user:email&description=Forcepoint%20Enterprise%20AI%20-%20Skill%20Submit`}
-                      target="_blank"
-                      rel="noreferrer"
-                      title="Open GitHub Enterprise in a new tab to mint a token"
-                    >
-                      <GithubIcon size={13} />
-                      Generate PAT
-                    </a>
-                  </div>
-                  <div className="sb-hint">
-                    Required scopes: <code className="ss-code">repo</code> + <code className="ss-code">user:email</code>. Validated against your Forcepoint email before any commit; never stored or sent off-host.
-                  </div>
                 </div>
 
                 <div className="sb-field" style={{ gridColumn: 'span 12' }}>
@@ -1027,9 +965,9 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
                         {prResult.prUrl}
                       </a>
 
-                      {/* Iris tracking ref (AI-471) — human-readable handle
+                      {/* FIP tracking ref — human-readable handle
                           submitters can quote when chasing status, matching
-                          the shape emitted by /api/iris-intake. */}
+                          the shape emitted by /api/fip-intake. */}
                       {prResult.irisRef && (
                         <div className="ss-success-ref">
                           <span className="ss-success-ref-label">Tracking reference</span>

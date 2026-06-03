@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { ArrowRight, UploadCloudIcon, CheckIcon } from '../ui/icons.jsx'
 
-// Final stage. Assembles the bundle the AI-471 path expects (manifest.json,
-// README.md, {name}.md) and hands off to SkillSubmit via the prefill prop
-// added in the same change. No second submission path.
+// Final stage. Assembles the manifest.json + README.md + {name}.md bundle
+// the governance intake expects and hands off to SkillSubmit via the
+// prefill prop. No second submission path.
 
 export default function SubmitHandoff({ canSubmit, validation, onSubmit }) {
   const [submitting, setSubmitting] = useState(false)
@@ -22,7 +22,7 @@ export default function SubmitHandoff({ canSubmit, validation, onSubmit }) {
         <div>
           <div className="sc-submit-title">Submit to governance</div>
           <div className="sc-submit-sub">
-            Routes the assembled files through the existing AI-471 intake pipeline. No second submission path.
+            Routes the assembled files through the existing governance intake pipeline. No second submission path.
           </div>
         </div>
       </div>

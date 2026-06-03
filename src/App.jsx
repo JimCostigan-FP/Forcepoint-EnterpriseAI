@@ -12,6 +12,7 @@ import SignalSection from './components/sections/SignalSection.jsx'
 import LoginPage from './components/auth/LoginPage.jsx'
 import { useCurrentUser } from './lib/auth.js'
 import SkillCreatorSection from './components/sections/SkillCreatorSection.jsx'
+import AskAiPanel from './components/ai/AskAiPanel.jsx'
 
 const TABS = [
   { id: 'home',         label: 'Overview' },
@@ -31,9 +32,12 @@ export default function App() {
   const [globalQuery, setGlobalQuery]     = useState('')
   const [toast, setToast]                 = useState(null)
   // Prefill payload the skill creator hands to SkillSubmit on submit. Routing
-  // the assembled draft through the existing AI-471 intake keeps a single
+  // the assembled draft through the existing governance intake keeps a single
   // submission path — there is no separate creator endpoint.
   const [creatorPrefill, setCreatorPrefill] = useState(null)
+  // Ask-AI panel state. Null when closed; { question, answer, loading, error }
+  // while open. Replaced (not appended to) on the next askQuick.
+  const [askState, setAskState] = useState(null)
 
   function showSection(id) {
     setActiveSection(id)
@@ -50,7 +54,31 @@ export default function App() {
     window.clearTimeout(notify._t)
     notify._t = window.setTimeout(() => setToast(null), 2200)
   }
-  function askQuick(/* question */) { notify('AI assistant — coming soon') }
+
+  // askQuick(question) — fires the Anthropic-backed /api/ask endpoint and
+  // surfaces the response in the AskAiPanel. The endpoint is session-gated
+  // (Okta) so credentials must ride along with the request.
+  async function askQuick(question) {
+    const q = (question || '').trim()
+    if (!q) return
+    setAskState({ question: q, answer: null, loading: true, error: null })
+    try {
+      const res = await fetch('/api/ask', {
+        method:      'POST',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify({ message: q }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setAskState(s => s && { ...s, loading: false, error: data.error || `HTTP ${res.status}` })
+        return
+      }
+      setAskState(s => s && { ...s, loading: false, answer: data.text || '' })
+    } catch (err) {
+      setAskState(s => s && { ...s, loading: false, error: err.message || 'Network error reaching the AI proxy.' })
+    }
+  }
 
   // ── Auth gate ──────────────────────────────────────────────────────
   // Avoid flashing the LoginPage before /api/auth/me resolves.
@@ -113,6 +141,10 @@ export default function App() {
 
       {toast && (
         <div className="toast" role="status" aria-live="polite">{toast}</div>
+      )}
+
+      {askState && (
+        <AskAiPanel state={askState} onClose={() => setAskState(null)} />
       )}
     </>
   )

@@ -1,4 +1,4 @@
-/* LoginPage — full-viewport sign-in surface for Iris.
+/* LoginPage — full-viewport sign-in surface for the FIP portal.
    Visual language follows the rest of the portal (teal accent, navy
    typography, soft cards). Kept self-contained so it's easy to host
    stand-alone if we ever split it into its own route. */
