@@ -159,6 +159,22 @@
   transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 .tab:hover { color: rgba(255, 255, 255, 0.9); }
+
+/* Small status pill on a tab (e.g. "In development") — tuned for the dark
+   tab strip rather than the light-surface .badge used in section content. */
+.tab-badge {
+  margin-left: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+  vertical-align: middle;
+}
+
 .tab.active {
   color: #fff;
   border-bottom-color: var(--teal-light);

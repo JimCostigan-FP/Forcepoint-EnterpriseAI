@@ -9,6 +9,7 @@ import EventsSection from './components/sections/EventsSection.jsx'
 import AmbassadorSection from './components/sections/AmbassadorSection.jsx'
 import ArchitectureSection from './components/sections/ArchitectureSection.jsx'
 import SignalSection from './components/sections/SignalSection.jsx'
+import ProjectSection from './components/sections/ProjectSection.jsx'
 import LoginPage from './components/auth/LoginPage.jsx'
 import { useCurrentUser } from './lib/auth.js'
 import SkillCreatorSection from './components/sections/SkillCreatorSection.jsx'
@@ -19,11 +20,13 @@ const TABS = [
   { id: 'skills',       label: 'Skills library' },
   { id: 'prompts',      label: 'Prompt showcase' },
   { id: 'howtos',       label: 'How-tos & tips' },
-  { id: 'events',       label: 'Events' },
-  { id: 'news',         label: 'Latest news' },
+  // Events, Latest news and The Signal are hidden for now — uncomment to restore.
+  // { id: 'events',       label: 'Events' },
+  // { id: 'news',         label: 'Latest news' },
   { id: 'ambassador',   label: 'AI Ambassador' },
   { id: 'architecture', label: 'Architecture & IT' },
-  { id: 'signal',       label: 'The Signal' },
+  // { id: 'signal',       label: 'The Signal' },
+  { id: 'project',      label: 'Project', badge: 'In development' },
 ]
 
 export default function App() {
@@ -132,6 +135,7 @@ export default function App() {
         <AmbassadorSection   active={activeSection === 'ambassador'}   onAskQuick={askQuick} />
         <ArchitectureSection active={activeSection === 'architecture'} onAskQuick={askQuick} />
         <SignalSection       active={activeSection === 'signal'} />
+        <ProjectSection      active={activeSection === 'project'} />
         <SkillCreatorSection
           active={activeSection === 'skill-creator'}
           onShowSection={showSection}

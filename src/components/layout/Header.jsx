@@ -119,7 +119,7 @@ export default function Header({ activeSection, tabs, onShowSection, onAskQuick,
         <div className="site-hero-actions">
           <button className="site-hero-cta" onClick={() => onShowSection('skills')}>Browse skills →</button>
           <button className="site-hero-cta site-hero-cta-ghost" onClick={() => onShowSection('howtos')}>How-tos &amp; tips</button>
-          <button className="site-hero-cta site-hero-cta-ghost" onClick={() => onShowSection('events')}>Events calendar</button>
+          <button className="site-hero-cta site-hero-cta-ghost" onClick={() => onShowSection('architecture')}>Architecture &amp; IT</button>
         </div>
       </div>
 
@@ -136,6 +136,7 @@ export default function Header({ activeSection, tabs, onShowSection, onAskQuick,
               onClick={() => onShowSection(tab.id)}
             >
               {tab.label}
+              {tab.badge && <span className="tab-badge">{tab.badge}</span>}
             </button>
           ))}
         </div>
