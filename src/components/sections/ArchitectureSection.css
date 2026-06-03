@@ -1,11 +1,11 @@
-/* Architecture & IT — paired document hero tiles at the top of the section.
+/* Architecture & IT — document hero tiles at the top of the section.
    Visual language mirrors the home page hero-feature so the two surfaces
-   feel like one product, but the layout is a 2-up grid since the heroes
-   here are reference-doc links, not a single CTA. */
+   feel like one product. An auto-fit grid lets the reference-doc links
+   flow N-up (3 across on wide screens) and reflow as the viewport narrows. */
 
 .arch-doc-heroes {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-5);
 }
