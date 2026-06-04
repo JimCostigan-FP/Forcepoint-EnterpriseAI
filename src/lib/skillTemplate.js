@@ -50,7 +50,7 @@ export function buildManifest({ name, version, description, triggers, ownerEmail
     owner: ownerEmail,
     contributed_date: new Date().toISOString().split('T')[0],
     template_version: TEMPLATE_VERSION,
-    source: 'iris-skill-creator',
+    source: 'fip-skill-creator',
     maintenance: {
       review_cadence: 'quarterly',
       skill_owner: ownerEmail,

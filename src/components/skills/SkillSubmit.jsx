@@ -102,7 +102,7 @@ async function pushInventoryToGitHub(skillName, version, inventory, committer, i
       }
     }
 
-    const irisRef = extras.irisRef ? `**Tracking ref:** \`${extras.irisRef}\`\n` : ''
+    const fipRef = extras.fipRef ? `**Tracking ref:** \`${extras.fipRef}\`\n` : ''
     const tierLine = extras.tier ? `**Trust tier:** ${extras.tier}\n` : ''
     const useCaseBlock = extras.useCase
       ? `\n### Use case / business value\n${extras.useCase}\n`
@@ -110,7 +110,7 @@ async function pushInventoryToGitHub(skillName, version, inventory, committer, i
     const prBody =
       `## Skill Submission: \`${skillName}\` v${version}\n\n` +
       `**Submitter:** ${committer}\n` +
-      `${irisRef}${tierLine}` +
+      `${fipRef}${tierLine}` +
       `\n### What does this skill do?\n${intent}\n` +
       useCaseBlock +
       `\n---\n_Submitted via the Forcepoint Intelligence Platform. Files at \`skills/${skillName}/v${version}/\`._`
@@ -578,7 +578,7 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
     // ref that matches the format the low-friction /api/fip-intake endpoint
     // emits, so submitters across both paths quote the same identifier shape.
     const ref     = 'SKL-' + Date.now().toString(36).toUpperCase().slice(-6)
-    const irisRef = 'FIP-' + Date.now().toString(36).toUpperCase() +
+    const fipRef = 'FIP-' + Date.now().toString(36).toUpperCase() +
                     '-' + Math.random().toString(36).slice(2, 6).toUpperCase()
     const sName = skillName.trim()
     const sVer  = version.trim()
@@ -615,7 +615,7 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
     setStep(5, 'running', 'uploading…')
     const committer = `${name} (${dept}) <${email}>`
     const result    = await pushInventoryToGitHub(sName, sVer, inventory, committer, intent.trim(), GITHUB_CONFIG.HOPPER_TOKEN,
-      { irisRef, tier: tier || null, useCase: useCase.trim() || null })
+      { fipRef, tier: tier || null, useCase: useCase.trim() || null })
 
     if (!result.ok) {
       setSubmitted(false)
@@ -628,7 +628,7 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
 
     setStep(4, 'pass', 'assigned')
     setStep(5, 'pass', `PR #${result.prNumber}`)
-    setPrResult({ ...result, ref, irisRef, tier, useCase, name, dept, sName, sVer })
+    setPrResult({ ...result, ref, fipRef, tier, useCase, name, dept, sName, sVer })
     setSubmitDisabled(false)
   }
 
@@ -968,10 +968,10 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
                       {/* FIP tracking ref — human-readable handle
                           submitters can quote when chasing status, matching
                           the shape emitted by /api/fip-intake. */}
-                      {prResult.irisRef && (
+                      {prResult.fipRef && (
                         <div className="ss-success-ref">
                           <span className="ss-success-ref-label">Tracking reference</span>
-                          <code className="ss-success-ref-value">{prResult.irisRef}</code>
+                          <code className="ss-success-ref-value">{prResult.fipRef}</code>
                         </div>
                       )}
 
