@@ -107,7 +107,7 @@ export default function App() {
         <AmbassadorSection   active={activeSection === 'ambassador'}   onAskQuick={askQuick} />
         <ArchitectureSection active={activeSection === 'architecture'} onAskQuick={askQuick} />
         <SignalSection       active={activeSection === 'signal'} />
-        <ProjectSection      active={activeSection === 'project'} />
+        <ProjectSection      active={activeSection === 'project'} user={auth.user} />
         <SkillCreatorSection
           active={activeSection === 'skill-creator'}
           onShowSection={showSection}

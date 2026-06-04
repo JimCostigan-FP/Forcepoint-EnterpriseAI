@@ -12,9 +12,10 @@ const session = require("express-session");
 const path    = require("path");
 const fs      = require("fs");
 
-const askFn        = require("../api/ask/index.js");
-const irisIntakeFn = require("../api/iris-intake/index.js");
-const okta         = require("../auth/okta.cjs");
+const askFn             = require("../api/ask/index.js");
+const irisIntakeFn      = require("../api/iris-intake/index.js");
+const projectFeedbackFn = require("../api/project-feedback/index.js");
+const okta              = require("../auth/okta.cjs");
 
 const app = express();
 
@@ -95,6 +96,9 @@ app.options("/api/ask",                   adapt(askFn));
 
 app.post("/api/iris-intake",    okta.requireAuth, adapt(irisIntakeFn));
 app.options("/api/iris-intake",                   adapt(irisIntakeFn));
+
+app.post("/api/project-feedback",    okta.requireAuth, adapt(projectFeedbackFn));
+app.options("/api/project-feedback",                   adapt(projectFeedbackFn));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
