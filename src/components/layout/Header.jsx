@@ -106,6 +106,7 @@ export default function Header({ activeSection, tabs, onShowSection, onAskQuick,
   // user prop is always present.
   const user = auth?.user
   const firstName = pickFirstName(user)
+  const fullName  = user?.name || firstName
 
   return (
     <header className="site-header">
@@ -129,7 +130,7 @@ export default function Header({ activeSection, tabs, onShowSection, onAskQuick,
 
       <div className="site-hero">
         <div className="site-hero-eyebrow">
-          {firstName ? `Welcome back, ${firstName}` : 'Your AI guide, built for Forcepoint'}
+          {fullName ? `Welcome back, ${fullName}` : 'Your AI guide, built for Forcepoint'}
         </div>
         <h1 className="site-hero-headline">Know more.<br />Work smarter.<br />Stay secure.</h1>
         <p className="site-hero-body">Everything you need to use AI confidently at Forcepoint — tools, skills, prompts, events and expert guidance, in one place.</p>
