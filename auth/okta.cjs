@@ -97,11 +97,16 @@ function getSaml() {
 
 // ── Identity helpers ───────────────────────────────────────────────────
 function devIdentity() {
+  const firstName = (DEV_USER_NAME || '').trim().split(/\s+/)[0]
+                 || (DEV_USER_EMAIL || '').split('@')[0].replace(/[._-]+/g, ' ').split(' ')[0]
+                 || 'User'
   return {
     authenticated: true,
     provider:      'dev',
     userId:        'dev-user',
     name:          DEV_USER_NAME,
+    firstName,
+    lastName:      null,
     email:         DEV_USER_EMAIL,
     roles:         ['authenticated'],
     issuer:        SAML_IDP_ENTITY_ID,
@@ -120,13 +125,42 @@ function identityFromSamlProfile(profile) {
   const first = get('firstName', 'givenName', 'urn:oid:2.5.4.42')
   const last  = get('lastName', 'surname', 'familyName', 'urn:oid:2.5.4.4')
   const display = get('displayName', 'name', 'cn')
-  const name = display || [first, last].filter(Boolean).join(' ').trim() || email
+
+  // Derive a first name reliably. Corporate directories often emit
+  // displayName="Last, First" (e.g. "Costigan, Jim"), so a naive split-on-
+  // whitespace yields the LAST name. Handle the "Last, First" form first,
+  // then "First Last", then fall back to the email local part.
+  const firstFromAny = (s) => {
+    if (!s) return null
+    const t = String(s).trim()
+    if (!t) return null
+    if (t.includes(',')) {
+      const after = t.slice(t.indexOf(',') + 1).trim()
+      if (after) return after.split(/\s+/)[0]
+    }
+    return t.split(/\s+/)[0]
+  }
+  const firstName =
+    first ||
+    firstFromAny(display) ||
+    firstFromAny((email || '').split('@')[0].replace(/[._-]+/g, ' '))
+
+  // Full display name. Prefer "First Last" assembly when both claims exist,
+  // since some directories ship displayName="Last, First" which reads oddly.
+  // Fall back to whatever the directory sent.
+  const name =
+    (first && last ? `${first} ${last}` : null) ||
+    display ||
+    [first, last].filter(Boolean).join(' ').trim() ||
+    email
 
   return {
     authenticated: true,
     provider:      'okta',
     userId:        profile.nameID || email,
     name,
+    firstName,
+    lastName:      last || null,
     email,
     roles:         Array.isArray(profile.groups) ? profile.groups : ['authenticated'],
     issuer:        SAML_IDP_ENTITY_ID,

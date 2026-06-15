@@ -46,19 +46,26 @@ const SUGGESTED_PROMPTS = [
     ask:   'Review this code for security issues, readability and performance. Flag any patterns that could create compliance risk.' },
 ]
 
-// Pull the first display name out of a full name or an email address —
-// "ismael.contrerasmejia@forcepoint.com" → "Ismael", "Jane Smith" → "Jane".
+// Fallback first-name derivation when the server didn't supply one.
+// Handles "Last, First" (Okta/AD), "First Last", and email local parts.
 function firstNameOf(nameOrEmail) {
   if (!nameOrEmail) return ''
-  const base = String(nameOrEmail).split('@')[0].replace(/[._-]+/g, ' ').trim()
-  const first = base.split(/\s+/)[0]
-  return first ? first.charAt(0).toUpperCase() + first.slice(1) : ''
+  const raw = String(nameOrEmail).trim()
+  if (!raw) return ''
+  const local = raw.includes('@')
+    ? raw.split('@')[0].replace(/[._-]+/g, ' ').trim()
+    : raw
+  const candidate = local.includes(',')
+    ? local.slice(local.indexOf(',') + 1).trim().split(/\s+/)[0]
+    : local.split(/\s+/)[0]
+  return candidate ? candidate.charAt(0).toUpperCase() + candidate.slice(1) : ''
 }
+const pickFirstName = (user) => user?.firstName || firstNameOf(user?.name || user?.email)
 
 export default function HomeSection({ active, onShowSection, onAskQuick, user }) {
   const [pinned, setPinned] = useState(['skills', 'prompts', 'howtos', 'events'])
   const [customizing, setCustomizing] = useState(false)
-  const firstName = firstNameOf(user?.name || user?.email) || 'there'
+  const firstName = pickFirstName(user) || 'there'
 
   function togglePin(id, e) {
     e.stopPropagation()

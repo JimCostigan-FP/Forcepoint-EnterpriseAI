@@ -29,11 +29,28 @@ function initialsOf(nameOrEmail) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
+// Fallback derivation when the server didn't supply `user.firstName`.
+// Handles the "Last, First" display-name shape Okta/AD often emits
+// alongside the more familiar "First Last" and email forms.
 function firstNameOf(nameOrEmail) {
   if (!nameOrEmail) return ''
-  const base = String(nameOrEmail).split('@')[0].replace(/[._-]+/g, ' ').trim()
-  const first = base.split(/\s+/)[0]
-  return first ? first.charAt(0).toUpperCase() + first.slice(1) : ''
+  const raw = String(nameOrEmail).trim()
+  if (!raw) return ''
+  // Email — drop the domain, normalize separators.
+  const local = raw.includes('@')
+    ? raw.split('@')[0].replace(/[._-]+/g, ' ').trim()
+    : raw
+  // "Last, First" → take the token after the comma.
+  const candidate = local.includes(',')
+    ? local.slice(local.indexOf(',') + 1).trim().split(/\s+/)[0]
+    : local.split(/\s+/)[0]
+  return candidate ? candidate.charAt(0).toUpperCase() + candidate.slice(1) : ''
+}
+
+// Prefer the server-derived first name; fall back to parsing.
+function pickFirstName(user) {
+  if (user?.firstName) return user.firstName
+  return firstNameOf(user?.name || user?.email)
 }
 
 function UserMenu({ user }) {
@@ -61,7 +78,7 @@ function UserMenu({ user }) {
         aria-expanded={open}
       >
         <span className="site-user-avatar" aria-hidden="true">{initialsOf(user?.name || user?.email)}</span>
-        <span className="site-user-name">{firstNameOf(name) || name}</span>
+        <span className="site-user-name">{pickFirstName(user) || name}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
              className={`site-user-chev${open ? ' is-open' : ''}`} aria-hidden="true">
           <path d="m6 9 6 6 6-6" />
@@ -88,7 +105,7 @@ export default function Header({ activeSection, tabs, onShowSection, onAskQuick,
   // App-level gate guarantees auth.status === 'authenticated' here; the
   // user prop is always present.
   const user = auth?.user
-  const firstName = firstNameOf(user?.name || user?.email)
+  const firstName = pickFirstName(user)
 
   return (
     <header className="site-header">

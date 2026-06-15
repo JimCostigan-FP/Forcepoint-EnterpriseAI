@@ -35,12 +35,21 @@ const SOURCE_LABELS = {
 let _mid = 0
 const nextId = () => `m${++_mid}`
 
+// Fallback first-name derivation when the server didn't supply one.
+// Handles "Last, First" (Okta/AD), "First Last", and email local parts.
 function firstNameOf(nameOrEmail) {
   if (!nameOrEmail) return ''
-  const base = String(nameOrEmail).split('@')[0].replace(/[._-]+/g, ' ').trim()
-  const first = base.split(/\s+/)[0]
-  return first ? first.charAt(0).toUpperCase() + first.slice(1) : ''
+  const raw = String(nameOrEmail).trim()
+  if (!raw) return ''
+  const local = raw.includes('@')
+    ? raw.split('@')[0].replace(/[._-]+/g, ' ').trim()
+    : raw
+  const candidate = local.includes(',')
+    ? local.slice(local.indexOf(',') + 1).trim().split(/\s+/)[0]
+    : local.split(/\s+/)[0]
+  return candidate ? candidate.charAt(0).toUpperCase() + candidate.slice(1) : ''
 }
+const pickFirstName = (user) => user?.firstName || firstNameOf(user?.name || user?.email)
 
 function SourceChips({ sources }) {
   if (!Array.isArray(sources) || sources.length === 0) return null
@@ -76,11 +85,18 @@ export default function AskAiSection({ active, user, pendingAsk, onPendingConsum
   const textareaRef = useRef(null)
   const abortRef    = useRef(null)
   const busyRef     = useRef(false)
+  // Mirror of `messages` so send() can read the latest history without
+  // pulling it into useCallback deps (which would re-create the handler on
+  // every keystroke) and without relying on setState-updater timing
+  // (which is async in React 18 and was dropping the array on subsequent sends).
+  const messagesRef = useRef([])
 
-  const firstName = firstNameOf(user?.name || user?.email)
+  const firstName = pickFirstName(user)
 
-  // Auto-scroll to the newest content as it streams in.
+  // Auto-scroll to the newest content as it streams in, and keep the
+  // ref in sync so send() always sees the latest turns.
   useEffect(() => {
+    messagesRef.current = messages
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages])
@@ -101,11 +117,10 @@ export default function AskAiSection({ active, user, pendingAsk, onPendingConsum
     const aiMsg   = { id: nextId(), role: 'assistant', content: '', sources: [], streaming: true }
 
     // Snapshot the history to forward (prior turns + this user turn).
-    let history = []
-    setMessages((prev) => {
-      history = [...prev, userMsg].map((m) => ({ role: m.role, content: m.content }))
-      return [...prev, userMsg, aiMsg]
-    })
+    // Read from the ref so we get the freshest state synchronously —
+    // setState updater closures don't run in time for the fetch body below.
+    const history = [...messagesRef.current, userMsg].map((m) => ({ role: m.role, content: m.content }))
+    setMessages((prev) => [...prev, userMsg, aiMsg])
     setInput('')
     setBusy(true); busyRef.current = true
 
