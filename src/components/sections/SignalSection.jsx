@@ -1,7 +1,15 @@
 import { useState } from 'react'
+import ISSUE_5_HTML from '../../content/signal/signal-issue-05.html?raw'
 import ISSUE_1_HTML from '../../content/signal/signal_newsletter_issue1.html?raw'
 
 const ISSUES = [
+  {
+    number: 5,
+    date: 'June 14, 2026',
+    title: 'Fourteen teams. Four patterns. The company shows us what to build.',
+    summary: 'Hackathon Round 1 wraps — 14 submissions across four architectural patterns · Five projects fast-tracked to architecture review · PowerPoint branding skill ready for limited beta · Enterprise AI Standard under AI Council review.',
+    html: ISSUE_5_HTML,
+  },
   {
     number: 1,
     date: 'May 1, 2026',
