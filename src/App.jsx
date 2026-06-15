@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Header from './components/layout/Header.jsx'
 import HomeSection from './components/sections/HomeSection.jsx'
 import HowtosSection from './components/sections/HowtosSection.jsx'
@@ -13,10 +13,11 @@ import ProjectSection from './components/sections/ProjectSection.jsx'
 import LoginPage from './components/auth/LoginPage.jsx'
 import { useCurrentUser } from './lib/auth.js'
 import SkillCreatorSection from './components/sections/SkillCreatorSection.jsx'
-import AskAiPanel from './components/ai/AskAiPanel.jsx'
+import AskAiSection from './components/sections/AskAiSection.jsx'
 
 const TABS = [
   { id: 'home',         label: 'Overview' },
+  { id: 'ask',          label: 'Ask AI' },
   { id: 'skills',       label: 'Skills library' },
   { id: 'prompts',      label: 'Prompt showcase' },
   { id: 'howtos',       label: 'How-tos & tips' },
@@ -29,23 +30,49 @@ const TABS = [
   { id: 'project',      label: 'Project', badge: 'In development' },
 ]
 
+// Each section has its own URL path: home → "/", everything else → "/<id>".
+// The Node server's SPA fallback serves index.html for these paths, so deep
+// links and refreshes land on the right page.
+const SECTION_IDS = [
+  'home', 'ask', 'skills', 'prompts', 'howtos', 'ambassador',
+  'architecture', 'project', 'news', 'events', 'signal', 'skill-creator',
+]
+const pathFromSection = (id) => (id === 'home' ? '/' : `/${id}`)
+function sectionFromPath(pathname) {
+  const seg = (pathname || '/').replace(/^\/+|\/+$/g, '').split('/')[0]
+  if (!seg) return 'home'
+  return SECTION_IDS.includes(seg) ? seg : 'home'
+}
+
 export default function App() {
   const auth = useCurrentUser()
-  const [activeSection, setActiveSection] = useState('home')
+  const [activeSection, setActiveSection] = useState(() => sectionFromPath(window.location.pathname))
   const [globalQuery, setGlobalQuery]     = useState('')
   const [toast, setToast]                 = useState(null)
   // Prefill payload the skill creator hands to SkillSubmit on submit. Routing
   // the assembled draft through the existing governance intake keeps a single
   // submission path — there is no separate creator endpoint.
   const [creatorPrefill, setCreatorPrefill] = useState(null)
-  // Ask-AI panel state. Null when closed; { question, answer, loading, error }
-  // while open. Replaced (not appended to) on the next askQuick.
-  const [askState, setAskState] = useState(null)
+  // A question routed into the dedicated Ask AI chat page from anywhere in the
+  // portal (hero CTA, header links, section "try" buttons). The AskAiSection
+  // auto-sends it once when it becomes active, then clears it.
+  const [pendingAsk, setPendingAsk] = useState(null)
 
   function showSection(id) {
     setActiveSection(id)
+    const path = pathFromSection(id)
+    if (window.location.pathname !== path) {
+      window.history.pushState({ section: id }, '', path)
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  // Keep the active section in sync with browser back/forward navigation.
+  useEffect(() => {
+    const onPop = () => setActiveSection(sectionFromPath(window.location.pathname))
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   function handleCreatorHandoff(payload) {
     setCreatorPrefill(payload)
@@ -58,29 +85,14 @@ export default function App() {
     notify._t = window.setTimeout(() => setToast(null), 2200)
   }
 
-  // askQuick(question) — fires the Anthropic-backed /api/ask endpoint and
-  // surfaces the response in the AskAiPanel. The endpoint is session-gated
-  // (Okta) so credentials must ride along with the request.
-  async function askQuick(question) {
+  // askQuick(question) — routes a question into the dedicated Ask AI chat page
+  // and switches to it. The page (AskAiSection) streams the grounded answer
+  // from /api/ask. Keeping this prop name means the existing "Ask AI"
+  // affordances across the portal need no changes.
+  function askQuick(question) {
     const q = (question || '').trim()
-    if (!q) return
-    setAskState({ question: q, answer: null, loading: true, error: null })
-    try {
-      const res = await fetch('/api/ask', {
-        method:      'POST',
-        credentials: 'include',
-        headers:     { 'Content-Type': 'application/json' },
-        body:        JSON.stringify({ message: q }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setAskState(s => s && { ...s, loading: false, error: data.error || `HTTP ${res.status}` })
-        return
-      }
-      setAskState(s => s && { ...s, loading: false, answer: data.text || '' })
-    } catch (err) {
-      setAskState(s => s && { ...s, loading: false, error: err.message || 'Network error reaching the AI proxy.' })
-    }
+    setPendingAsk(q || ' ')   // a bare space still opens the page (empty state)
+    showSection('ask')
   }
 
   // ── Auth gate ──────────────────────────────────────────────────────
@@ -118,6 +130,12 @@ export default function App() {
 
       <main className="portal-body" id="main-content">
         <HomeSection         active={activeSection === 'home'}         onShowSection={showSection} onAskQuick={askQuick} user={auth.user} />
+        <AskAiSection
+          active={activeSection === 'ask'}
+          user={auth.user}
+          pendingAsk={pendingAsk}
+          onPendingConsumed={() => setPendingAsk(null)}
+        />
         <HowtosSection       active={activeSection === 'howtos'}       onAskQuick={askQuick} />
         <NewsSection         active={activeSection === 'news'} />
         <SkillsSection
@@ -145,10 +163,6 @@ export default function App() {
 
       {toast && (
         <div className="toast" role="status" aria-live="polite">{toast}</div>
-      )}
-
-      {askState && (
-        <AskAiPanel state={askState} onClose={() => setAskState(null)} />
       )}
     </>
   )

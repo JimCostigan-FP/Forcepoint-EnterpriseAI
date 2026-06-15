@@ -117,9 +117,9 @@ export default function Header({ activeSection, tabs, onShowSection, onAskQuick,
         <h1 className="site-hero-headline">Know more.<br />Work smarter.<br />Stay secure.</h1>
         <p className="site-hero-body">Everything you need to use AI confidently at Forcepoint — tools, skills, prompts, events and expert guidance, in one place.</p>
         <div className="site-hero-actions">
-          <button className="site-hero-cta" onClick={() => onShowSection('skills')}>Browse skills →</button>
+          <button className="site-hero-cta" onClick={() => onShowSection('ask')}>Ask AI ✨</button>
+          <button className="site-hero-cta site-hero-cta-ghost" onClick={() => onShowSection('skills')}>Browse skills</button>
           <button className="site-hero-cta site-hero-cta-ghost" onClick={() => onShowSection('howtos')}>How-tos &amp; tips</button>
-          <button className="site-hero-cta site-hero-cta-ghost" onClick={() => onShowSection('architecture')}>Architecture &amp; IT</button>
         </div>
       </div>
 

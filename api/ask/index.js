@@ -1,153 +1,134 @@
 /**
- * api/ask/index.js — Anthropic API proxy for the portal "Ask" experience.
+ * api/ask/index.js — portal streaming proxy for the Ask AI chat page.
  * Owner: IT Enterprise AI team · ITEnterpriseAIteam@forcepoint.com
  *
- * This handler sits between the browser and the Anthropic API so that:
- *  - The API key never reaches the browser
- *  - Identity is validated server-side via the Okta session (see auth/okta.cjs)
- *  - DLP inspection can be added here (call your Forcepoint DLP API before forwarding)
- *  - Rate limiting and logging can be applied centrally
+ * Streams a multi-turn conversation token-by-token over Server-Sent Events.
+ * It forwards to Forcepoint's contained Ask AI backend (forcepoint-ai/ask_service
+ * /ask) and pipes the SSE stream straight back to the browser — so it is mounted
+ * as a NATIVE Express (req, res) handler, not through the buffering adapt()
+ * wrapper in server/index.cjs. The portal never calls Anthropic directly; the
+ * backend grounds answers in internal sources and returns citations.
  *
- * Runs under the Node Express server (server/index.cjs) on the internal
- * Linux host; the (context, req) calling convention is kept so the handler
- * stays portable if it ever moves to a serverless target.
+ * Responsibilities kept at the portal edge:
+ *  - Identity: req.user from the Okta session is forwarded for logging/grounding.
+ *  - Service auth: shared secret (ASK_SERVICE_TOKEN) to the backend.
+ *  - DLP P1 hook on the latest user message before forwarding.
+ *  - A clean SSE error event if the backend is unreachable or rejects.
  *
- * Environment variables (set in /etc/ai-portal/api.env):
- *   ANTHROPIC_API_KEY   — your Anthropic API key
- *   ANTHROPIC_MODEL     — model ID (default: claude-sonnet-4-6)
- *   ALLOWED_ORIGINS     — comma-separated allowed CORS origins (e.g. http://10.23.80.28)
+ * Environment variables:
+ *   ASK_BACKEND_URL    — backend /ask URL (default: http://127.0.0.1:8100/ask)
+ *   ASK_SERVICE_TOKEN  — shared secret presented to the backend
+ *   ASK_TIMEOUT_MS     — upstream timeout (default 60000 — streams run longer)
+ *   ALLOWED_ORIGINS    — comma-separated allowed CORS origins
  */
 
+const http  = require("http");
 const https = require("https");
 
-// Default model bumped to Sonnet 4.6; override per-deploy via api.env.
-const MODEL     = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
-const API_KEY   = process.env.ANTHROPIC_API_KEY || "";
-const MAX_TOKENS = 1000;
+const BACKEND_URL   = process.env.ASK_BACKEND_URL   || "http://127.0.0.1:8100/ask";
+const SERVICE_TOKEN = process.env.ASK_SERVICE_TOKEN || "";
+const TIMEOUT_MS    = Number(process.env.ASK_TIMEOUT_MS) || 60000;
 
-const SYSTEM = `You are the Forcepoint Enterprise AI assistant.
+function sse(res, event, data) {
+  res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
 
-Your role is to help Forcepoint employees use AI tools effectively and safely.
-You embody the Forcepoint brand voice: the Sage archetype — warm, direct, collaborative and radically simple.
-
-Guidelines:
-- Keep all responses to 2–3 sentences maximum unless the user explicitly asks for more detail.
-- Use plain language. Avoid jargon unless it genuinely aids clarity.
-- Never reproduce, describe or infer Protected Information, source code, customer PII or Forcepoint Confidential data.
-- If you are uncertain, say so clearly rather than guessing.
-- Always encourage users to check the Forcepoint AI Policy (FP-IS-AI) and the AI Registry for tool approvals.
-- Reference the AI Ambassador program and the Enterprise AI team (ITEnterpriseAIteam@forcepoint.com) when relevant.`;
-
-module.exports = async function (context, req) {
+module.exports = function (req, res) {
   // ── CORS ──────────────────────────────────────────────────
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
   const origin = req.headers["origin"] || "";
   const corsOrigin = allowedOrigins.length === 0 || allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-
   const corsHeaders = {
-    "Access-Control-Allow-Origin":  corsOrigin,
+    "Access-Control-Allow-Origin":  corsOrigin || "",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
+    "Access-Control-Allow-Headers": "Content-Type",
   };
 
   if (req.method === "OPTIONS") {
-    context.res = { status: 204, headers: corsHeaders, body: "" };
+    res.writeHead(204, corsHeaders);
+    res.end();
     return;
   }
 
-  // ── VALIDATE REQUEST ──────────────────────────────────────
-  const message = req.body?.message?.trim();
-  if (!message) {
-    context.res = {
-      status: 400, headers: corsHeaders,
-      body: JSON.stringify({ error: "message field is required" })
-    };
+  // ── VALIDATE ──────────────────────────────────────────────
+  const messages = Array.isArray(req.body?.messages) ? req.body.messages : null;
+  if (!messages || messages.length === 0) {
+    res.writeHead(400, { ...corsHeaders, "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "messages array is required" }));
     return;
   }
 
-  if (!API_KEY) {
-    context.res = {
-      status: 500, headers: corsHeaders,
-      body: JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" })
-    };
-    return;
-  }
+  // ── DLP P1 hook (latest user message) ─────────────────────
+  // const lastUser = [...messages].reverse().find(m => m.role === "user");
+  // if (lastUser) { const r = await checkDLP(lastUser.content); if (r.blocked) {...} }
 
-  // ── TODO: DLP INSPECTION (P1) ─────────────────────────────
-  // Add your Forcepoint DLP API call here before forwarding to Claude.
-  // If DLP blocks the prompt, return a 403 and log the event.
-  //
-  // Example:
-  //   const dlpResult = await checkDLP(message);
-  //   if (dlpResult.blocked) {
-  //     context.log.warn("DLP P1 block:", dlpResult.reason);
-  //     context.res = { status: 403, headers: corsHeaders, body: JSON.stringify({ error: "Content blocked by DLP policy" }) };
-  //     return;
-  //   }
+  // ── Open the SSE response to the browser ──────────────────
+  res.writeHead(200, {
+    ...corsHeaders,
+    "Content-Type":      "text/event-stream",
+    "Cache-Control":     "no-cache, no-transform",
+    "Connection":        "keep-alive",
+    "X-Accel-Buffering": "no",   // tell nginx not to buffer the stream
+  });
+  if (typeof res.flushHeaders === "function") res.flushHeaders();
 
-  // ── CALL ANTHROPIC API ────────────────────────────────────
-  try {
-    const payload = JSON.stringify({
-      model:      MODEL,
-      max_tokens: MAX_TOKENS,
-      system:     SYSTEM,
-      messages:   [{ role: "user", content: message }]
-    });
+  // ── Forward to the backend and pipe the stream back ───────
+  let url;
+  try { url = new URL(BACKEND_URL); }
+  catch { sse(res, "error", { message: "Ask AI backend URL is misconfigured." }); return res.end(); }
 
-    const responseText = await new Promise((resolve, reject) => {
-      const options = {
-        hostname: "api.anthropic.com",
-        path:     "/v1/messages",
-        method:   "POST",
-        headers:  {
-          "Content-Type":       "application/json",
-          "Content-Length":     Buffer.byteLength(payload),
-          "x-api-key":          API_KEY,
-          "anthropic-version":  "2023-06-01"
-        }
-      };
+  const user = req.user ? { email: req.user.email, name: req.user.name } : null;
+  const payload = Buffer.from(JSON.stringify({ messages, user }));
+  const transport = url.protocol === "https:" ? https : http;
 
-      const httpReq = https.request(options, res => {
-        let data = "";
-        res.on("data", chunk => { data += chunk; });
-        res.on("end", () => resolve({ status: res.statusCode, body: data }));
-      });
+  const headers = {
+    "Content-Type":   "application/json",
+    "Content-Length": payload.length,
+    "Accept":         "text/event-stream",
+  };
+  if (SERVICE_TOKEN) headers["Authorization"] = `Bearer ${SERVICE_TOKEN}`;
 
-      httpReq.on("error", reject);
-      httpReq.write(payload);
-      httpReq.end();
-    });
-
-    if (responseText.status !== 200) {
-      const err = JSON.parse(responseText.body);
-      context.log.error("Anthropic API error:", err);
-      context.res = {
-        status: 502, headers: corsHeaders,
-        body: JSON.stringify({ error: `Model error: ${err?.error?.message || "unknown"}` })
-      };
-      return;
+  const upstream = transport.request(
+    {
+      hostname: url.hostname,
+      port:     url.port || (url.protocol === "https:" ? 443 : 80),
+      path:     url.pathname + url.search,
+      method:   "POST",
+      headers,
+      timeout:  TIMEOUT_MS,
+    },
+    (backendRes) => {
+      if (backendRes.statusCode !== 200) {
+        // Backend rejected (e.g. 401 bad token, 503 no key) — relay as an SSE
+        // error event so the chat UI shows it gracefully, then close.
+        let body = "";
+        backendRes.on("data", (c) => { body += c; });
+        backendRes.on("end", () => {
+          let detail = `Ask AI backend error (HTTP ${backendRes.statusCode})`;
+          try { const j = JSON.parse(body); detail = j.detail || j.error || detail; } catch { /* keep default */ }
+          sse(res, "error", { message: typeof detail === "string" ? detail : "Ask AI backend error" });
+          res.end();
+        });
+        return;
+      }
+      // Happy path: stream SSE bytes straight through.
+      backendRes.pipe(res);
+      backendRes.on("end", () => res.end());
     }
+  );
 
-    const data = JSON.parse(responseText.body);
-    const text = (data.content || [])
-      .filter(b => b.type === "text")
-      .map(b => b.text)
-      .join("");
+  upstream.on("timeout", () => upstream.destroy(new Error("Ask AI backend timed out")));
+  upstream.on("error", (err) => {
+    console.error("Ask AI proxy error:", err.message);
+    if (!res.writableEnded) {
+      sse(res, "error", { message: "Could not reach the Ask AI service. Please try again shortly." });
+      res.end();
+    }
+  });
 
-    // ── TODO: DLP INSPECTION (P3) ─────────────────────────────
-    // Add your Forcepoint DLP API call here to inspect the completion before return.
-    // If DLP blocks the completion, return a sanitised message instead.
+  // If the browser disconnects (closed tab, navigated away, Stop), abort upstream.
+  req.on("close", () => { if (!upstream.destroyed) upstream.destroy(); });
 
-    context.res = {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
-    };
-
-  } catch (err) {
-    context.log.error("Proxy error:", err);
-    context.res = {
-      status: 500, headers: corsHeaders,
-      body: JSON.stringify({ error: "Internal proxy error" })
-    };
-  }
+  upstream.write(payload);
+  upstream.end();
 };

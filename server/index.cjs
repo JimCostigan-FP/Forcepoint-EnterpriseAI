@@ -90,8 +90,10 @@ function adapt(handlerFn) {
 }
 
 // ── Authenticated API endpoints ────────────────────────────────────────
-app.post("/api/ask",    okta.requireAuth, adapt(askFn));
-app.options("/api/ask",                   adapt(askFn));
+// Ask AI — streamed SSE. Mounted natively (NOT via adapt(), which buffers the
+// whole response) so tokens reach the browser as they arrive.
+app.post("/api/ask",    okta.requireAuth, askFn);
+app.options("/api/ask",                   askFn);
 
 app.post("/api/fip-intake",    okta.requireAuth, adapt(fipIntakeFn));
 app.options("/api/fip-intake",                   adapt(fipIntakeFn));

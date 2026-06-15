@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "node server/index.cjs",
+    "dev:api": "node --watch server/index.cjs",
     "build": "vite build",
     "preview": "vite preview",
     "start": "NODE_ENV=production node server/index.cjs"
