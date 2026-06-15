@@ -67,9 +67,12 @@ const DEV_USER_EMAIL = process.env.FIP_DEV_USER_EMAIL || 'dev.user@forcepoint.co
 const DEV_USER_NAME  = process.env.FIP_DEV_USER_NAME  || 'Dev User'
 
 const samlConfigured  = Boolean(SAML_IDP_CERT && SAML_IDP_SSO_URL && SAML_IDP_ENTITY_ID)
-// Dev login auto-on when SAML isn't fully wired, so a freshly-installed
-// box still has a working sign-in path. Force on/off with FIP_ALLOW_DEV_LOGIN.
-const devLoginEnabled = process.env.FIP_ALLOW_DEV_LOGIN === '1' || !samlConfigured
+// Dev login is strictly opt-in via FIP_ALLOW_DEV_LOGIN=1. We deliberately do
+// NOT auto-enable it when SAML is unconfigured: on the live box a transient
+// cert read failure (e.g. wrong file group) would otherwise expose the dev
+// bypass to anyone hitting the LoginPage, which is exactly the leak we want
+// to prevent in production.
+const devLoginEnabled = process.env.FIP_ALLOW_DEV_LOGIN === '1'
 
 // ── Lazy SAML client ───────────────────────────────────────────────────
 let _saml
