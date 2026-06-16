@@ -14,17 +14,23 @@ import LoginPage from './components/auth/LoginPage.jsx'
 import { useCurrentUser } from './lib/auth.js'
 import SkillCreatorSection from './components/sections/SkillCreatorSection.jsx'
 
+// Events, Latest news and The Signal are hidden in production but shown in
+// local dev (import.meta.env.DEV) so they can be worked on. To restore them
+// in production too, move these entries out of the DEV-only spreads below.
+const DEV = import.meta.env.DEV
+
 const TABS = [
   { id: 'home',         label: 'Overview' },
   { id: 'skills',       label: 'Skills library' },
   { id: 'prompts',      label: 'Prompt showcase' },
   { id: 'howtos',       label: 'How-tos & tips' },
-  // Events, Latest news and The Signal are hidden for now — uncomment to restore.
-  // { id: 'events',       label: 'Events' },
-  // { id: 'news',         label: 'Latest news' },
+  ...(DEV ? [
+    { id: 'events',     label: 'Events' },
+    { id: 'news',       label: 'Latest news' },
+  ] : []),
   { id: 'ambassador',   label: 'AI Ambassador' },
   { id: 'architecture', label: 'Architecture & IT' },
-  // { id: 'signal',       label: 'The Signal' },
+  ...(DEV ? [{ id: 'signal', label: 'The Signal' }] : []),
   { id: 'project',      label: 'Project', badge: 'In development' },
 ]
 
