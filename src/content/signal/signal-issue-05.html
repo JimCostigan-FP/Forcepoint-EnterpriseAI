@@ -3,104 +3,112 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Signal — Issue #5 · June 14, 2026</title>
+<title>The Signal — Enterprise AI Weekly · Issue #5 · June 14, 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;700&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-.signal-wrap{font-family:'Barlow',Arial,sans-serif;color:#1a1d23;max-width:680px;margin:0 auto;padding:1rem;line-height:1.55;}
-.nl-header{background:linear-gradient(135deg,#005a4e 0%,#00af9a 100%);color:#fff;border-radius:12px;padding:24px 22px;margin-bottom:1.25rem;}
-.nl-header .eyebrow{font-family:'Barlow Condensed',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.92;margin-bottom:6px;}
-.nl-header h1{font-family:'Barlow Condensed',Arial,sans-serif;font-weight:900;font-size:34px;line-height:1.05;letter-spacing:-0.01em;margin-bottom:8px;}
-.nl-header .issue-meta{font-size:13px;opacity:0.92;}
-.headline{background:#E8F5F3;border-left:4px solid #00af9a;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:1.5rem;font-size:15px;line-height:1.6;}
+body{background:#f0f2f5;font-family:'Barlow',Arial,sans-serif;padding:2rem 1rem;color:#1a1d23;}
+.wrap{max-width:680px;margin:0 auto;}
+.nl-header{border-radius:12px;overflow:hidden;margin-bottom:1.25rem;}
+.nl-header img{width:100%;display:block;}
+.issue-title{margin-bottom:1.25rem;}
+.issue-title .eyebrow{font-family:'Barlow Condensed',Arial,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#007565;margin-bottom:6px;}
+.issue-title h1{font-family:'Barlow Condensed',Arial,sans-serif;font-weight:900;font-size:30px;line-height:1.08;letter-spacing:-0.01em;color:#003654;margin-bottom:6px;}
+.issue-title .issue-meta{font-size:12px;color:#6b7280;}
+.emerging{background:#E8F5F3;border-left:4px solid #00af9a;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:1.25rem;font-size:13px;line-height:1.75;color:#1a1d23;}
+.emerging strong{color:#005a4e;}
 .section{margin-bottom:1.5rem;}
-.sec-label{font-family:'Barlow Condensed',Arial,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#007565;border-bottom:2px solid #00af9a;padding-bottom:5px;margin-bottom:12px;}
-.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-.cards.three{grid-template-columns:repeat(3,1fr);}
-.card{background:#fff;border:1px solid #e2e5ea;border-radius:8px;padding:12px 14px;}
-.card-title{font-size:14px;font-weight:700;color:#1a1d23;margin-bottom:5px;line-height:1.3;}
-.card-body{font-size:13px;color:#374151;margin-bottom:8px;}
-.card-source{font-size:10px;color:#9ca3af;letter-spacing:0.02em;border-top:1px solid #f3f4f6;padding-top:6px;}
-.up-item{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start;}
-.up-badge{flex-shrink:0;background:#E8F5F3;color:#007565;font-family:'Barlow Condensed',Arial,sans-serif;font-weight:700;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 7px;border-radius:4px;margin-top:2px;}
-.up-text{font-size:13px;color:#374151;line-height:1.5;}
-.up-src{font-size:10px;color:#9ca3af;margin-top:2px;}
-.first-time{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;font-size:13px;color:#374151;line-height:1.6;}
+.sec-label{font-family:'Barlow Condensed',Arial,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#007565;border-bottom:2px solid #00af9a;padding-bottom:5px;margin-bottom:10px;}
+.cg{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;}
+.sk-card{background:#fff;border:1px solid #e2e5ea;border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.cg .sk-card{margin-bottom:0;}
+.sk-name{font-size:13px;font-weight:700;color:#1a1d23;}
+.sk-det{font-size:13px;color:#374151;margin-top:4px;line-height:1.65;}
+.sk-src{font-size:10px;color:#9ca3af;margin-top:4px;}
+.first-time{background:#fff;border:1px solid #e2e5ea;border-radius:8px;padding:13px 15px;font-size:13px;color:#374151;line-height:1.75;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.first-time strong{color:#005a4e;}
 .first-time a{color:#007565;text-decoration:underline;}
-.feedback{background:#fff7ed;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:1rem;font-size:13px;line-height:1.6;color:#374151;}
-.nl-footer{font-family:'Barlow Condensed',Arial,sans-serif;font-weight:700;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#007565;border-top:2px solid #00af9a;padding-top:10px;margin-top:1.5rem;text-align:center;}
-.footer-text{font-size:11px;color:#9ca3af;text-align:center;margin-top:6px;}
-@media (max-width:520px){.cards,.cards.three{grid-template-columns:1fr;}}
+.up-item{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;}
+.up-badge{font-size:10px;font-weight:700;background:#003654;color:#cbfaf4;border-radius:4px;padding:3px 8px;white-space:nowrap;margin-top:2px;letter-spacing:0.03em;flex-shrink:0;}
+.up-text{font-size:13px;color:#1a1d23;line-height:1.65;}
+.up-src{font-size:10px;color:#9ca3af;margin-top:2px;}
+.feedback{background:#fff;border:1px solid #e2e5ea;border-radius:8px;padding:13px 15px;font-size:13px;color:#374151;line-height:1.75;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.nl-footer{border-radius:12px;overflow:hidden;margin-top:1.25rem;}
+.nl-footer img{width:100%;display:block;}
+.footer-text{text-align:center;font-size:11px;color:#9ca3af;margin-top:10px;padding-bottom:1rem;}
+@media (max-width:520px){.cg{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
-<div class="signal-wrap">
+<div class="wrap">
 
-  <div class="nl-header">
+  <div class="nl-header"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDI4MCIgd2lkdGg9IjEyMDAiIGhlaWdodD0iMjgwIj4KCiAgPHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iMjgwIiBmaWxsPSIjMDAzNjU0Ij48L3JlY3Q+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjAgNzApIj48cmVjdCB4PSIwLjAwIiB5PSI2MS40NiIgd2lkdGg9IjYiIGhlaWdodD0iMTcuMDgiIHJ4PSIyLjUiIGZpbGw9IiNiNTMzOTkiIG9wYWNpdHk9IjAuNjg4Ij48L3JlY3Q+PHJlY3QgeD0iMTQuMDAiIHk9IjYwLjU5IiB3aWR0aD0iNiIgaGVpZ2h0PSIxOC44MiIgcng9IjIuNSIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC44MzciPjwvcmVjdD48cmVjdCB4PSIyOC4wMCIgeT0iNTIuNDciIHdpZHRoPSI2IiBoZWlnaHQ9IjM1LjA1IiByeD0iMi41IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjk2MiI+PC9yZWN0PjxyZWN0IHg9IjQyLjAwIiB5PSI2NC40NyIgd2lkdGg9IjYiIGhlaWdodD0iMTEuMDYiIHJ4PSIyLjUiIGZpbGw9IiNiNTMzOTkiIG9wYWNpdHk9IjAuODk2Ij48L3JlY3Q+PHJlY3QgeD0iNTYuMDAiIHk9IjU2LjE4IiB3aWR0aD0iNiIgaGVpZ2h0PSIyNy42NCIgcng9IjIuNSIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC43ODYiPjwvcmVjdD48cmVjdCB4PSI3MC4wMCIgeT0iNjYuMDAiIHdpZHRoPSI2IiBoZWlnaHQ9IjguMDAiIHJ4PSIyLjUiIGZpbGw9IiNiNTMzOTkiIG9wYWNpdHk9IjAuNzE1Ij48L3JlY3Q+PHJlY3QgeD0iODQuMDAiIHk9IjYyLjE2IiB3aWR0aD0iNiIgaGVpZ2h0PSIxNS42NyIgcng9IjIuNSIgZmlsbD0iI2I1MzM5OSIgb3BhY2l0eT0iMC43MDEiPjwvcmVjdD48cmVjdCB4PSI5OC4wMCIgeT0iNTkuOTIiIHdpZHRoPSI2IiBoZWlnaHQ9IjIwLjE3IiByeD0iMi41IiBmaWxsPSIjMDBhZjlhIiBvcGFjaXR5PSIxIj48L3JlY3Q+PHJlY3QgeD0iMTEyLjAwIiB5PSI0OS41MyIgd2lkdGg9IjYiIGhlaWdodD0iNDAuOTUiIHJ4PSIyLjUiIGZpbGw9IiMwMGFmOWEiIG9wYWNpdHk9IjEiPjwvcmVjdD48cmVjdCB4PSIxMjYuMDAiIHk9IjQzLjU0IiB3aWR0aD0iNiIgaGVpZ2h0PSI1Mi45MiIgcng9IjIuNSIgZmlsbD0iIzAwYWY5YSIgb3BhY2l0eT0iMSI+PC9yZWN0PjxyZWN0IHg9IjE0MC4wMCIgeT0iNDQuNDciIHdpZHRoPSI2IiBoZWlnaHQ9IjUxLjA1IiByeD0iMi41IiBmaWxsPSIjMDBhZjlhIiBvcGFjaXR5PSIxIj48L3JlY3Q+PHJlY3QgeD0iMTU0LjAwIiB5PSI1MS43MSIgd2lkdGg9IjYiIGhlaWdodD0iMzYuNTciIHJ4PSIyLjUiIGZpbGw9IiMwMGFmOWEiIG9wYWNpdHk9IjEiPjwvcmVjdD48cmVjdCB4PSIxNjguMDAiIHk9IjYwLjQ3IiB3aWR0aD0iNiIgaGVpZ2h0PSIxOS4wNyIgcng9IjIuNSIgZmlsbD0iIzAwYWY5YSIgb3BhY2l0eT0iMSI+PC9yZWN0PjxyZWN0IHg9IjE4Mi4wMCIgeT0iNjQuOTQiIHdpZHRoPSI2IiBoZWlnaHQ9IjEwLjEyIiByeD0iMi41IiBmaWxsPSIjMDBhZjlhIiBvcGFjaXR5PSIxIj48L3JlY3Q+PHJlY3QgeD0iMTk2LjAwIiB5PSI2Mi4xNyIgd2lkdGg9IjYiIGhlaWdodD0iMTUuNjUiIHJ4PSIyLjUiIGZpbGw9IiMwMGFmOWEiIG9wYWNpdHk9IjEiPjwvcmVjdD48cmVjdCB4PSIyMTAuMDAiIHk9IjU0LjAwIiB3aWR0aD0iNiIgaGVpZ2h0PSIzMi4wMCIgcng9IjIuNSIgZmlsbD0iIzAwYWY5YSIgb3BhY2l0eT0iMSI+PC9yZWN0PjwvZz4KICA8dGV4dCB4PSIzNDAiIHk9IjE2MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iMTIwIiBsZXR0ZXItc3BhY2luZz0iLTQiIGZpbGw9IiNmZmZmZmYiPlNJR05BTDwvdGV4dD4KICA8bGluZSB4MT0iMzQwIiB5MT0iMjAwIiB4Mj0iNDAwIiB5Mj0iMjAwIiBzdHJva2U9IiMwMGFmOWEiIHN0cm9rZS13aWR0aD0iMyI+PC9saW5lPgogIDx0ZXh0IHg9IjQxNiIgeT0iMjA4IiBmb250LWZhbWlseT0iQXJpYWwsIEhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCIgZm9udC1zaXplPSIyMiIgbGV0dGVyLXNwYWNpbmc9IjUiIGZpbGw9IiMwMGFmOWEiPkVOVEVSUFJJU0UgQUkgV0VFS0xZIMK3IEEgRk9SQ0VQT0lOVCBCUk9BRENBU1Q8L3RleHQ+Cjwvc3ZnPg==" alt="The Signal — Enterprise AI Weekly"></div>
+
+  <div class="issue-title">
     <div class="eyebrow">The Signal · Forcepoint Enterprise AI</div>
     <h1>Fourteen teams. Four patterns. The company shows us what to build.</h1>
     <div class="issue-meta">Issue #5 · Week ending June 14, 2026</div>
   </div>
 
-  <div class="headline">
+  <div class="emerging">
     Round 1 of the Forcepoint Enterprise AI Hackathon wrapped this week. Fourteen team submissions clustered into four architectural patterns, five projects move to fast-track architecture review, and a Forcepoint-branded presentation skill built outside the Enterprise AI team is ready for limited beta. The strongest signal of the week: the company is telling us what to build next — in working code.
   </div>
 
   <div class="section">
     <div class="sec-label">This week at Forcepoint</div>
-    <div class="cards">
-      <div class="card">
-        <div class="card-title">AI Council reviewing the Enterprise AI Standard</div>
-        <div class="card-body">The Council is now reviewing the Enterprise AI Standard — the document that establishes the requirements, guardrails, and responsibilities governing the development, deployment, and ongoing operation of AI systems at Forcepoint. We look forward to their feedback and approval.</div>
-        <div class="card-source">Source: Jira · Target Architecture workstream</div>
+    <div class="cg">
+      <div class="sk-card">
+        <div class="sk-name">AI Council reviewing the Enterprise AI Standard</div>
+        <div class="sk-det">The Council is now reviewing the Enterprise AI Standard — the document that establishes the requirements, guardrails, and responsibilities governing the development, deployment, and ongoing operation of AI systems at Forcepoint. We look forward to their feedback and approval.</div>
+        <div class="sk-src">Source: Jira · Target Architecture workstream</div>
       </div>
-      <div class="card">
-        <div class="card-title">Hackathon analysis complete</div>
-        <div class="card-body">All 14 submissions assessed against impact, execution, storytelling, and scalability, and clustered into four architectural patterns — connector skills, multi-source correlation, automation with escalation, and content generation. Five projects are flagged for fast-track architecture review.</div>
-        <div class="card-source">Source: Jira · Hackathon workstream</div>
+      <div class="sk-card">
+        <div class="sk-name">Hackathon analysis complete</div>
+        <div class="sk-det">All 14 submissions assessed against impact, execution, storytelling, and scalability, and clustered into four architectural patterns — connector skills, multi-source correlation, automation with escalation, and content generation. Five projects are flagged for fast-track architecture review.</div>
+        <div class="sk-src">Source: Jira · Hackathon workstream</div>
       </div>
-      <div class="card">
-        <div class="card-title">Intake refinement underway</div>
-        <div class="card-body">Hackathon findings are being folded into a revised use-case intake form, with explicit questions on data classification, orchestration approach, and token budgeting. Submitting an idea will be faster and clearer on Round 2.</div>
-        <div class="card-source">Source: Jira · EAI Portal workstream</div>
+      <div class="sk-card">
+        <div class="sk-name">Intake refinement underway</div>
+        <div class="sk-det">Hackathon findings are being folded into a revised use-case intake form, with explicit questions on data classification, orchestration approach, and token budgeting. Submitting an idea will be faster and clearer on Round 2.</div>
+        <div class="sk-src">Source: Jira · EAI Portal workstream</div>
       </div>
-      <div class="card">
-        <div class="card-title">FIP portal continues to harden</div>
-        <div class="card-body">The Forcepoint Intelligence Platform (FIP) is in steady iteration following last cycle's POC: end-to-end skill submission, security and functionality review, and publishing back to your organization's skills library remain the day-to-day path.</div>
-        <div class="card-source">Source: Jira · EAI Portal workstream</div>
+      <div class="sk-card">
+        <div class="sk-name">FIP portal continues to harden</div>
+        <div class="sk-det">The Forcepoint Intelligence Platform (FIP) is in steady iteration following last cycle's POC: end-to-end skill submission, security and functionality review, and publishing back to your organization's skills library remain the day-to-day path.</div>
+        <div class="sk-src">Source: Jira · EAI Portal workstream</div>
       </div>
     </div>
   </div>
 
   <div class="section">
     <div class="sec-label">From across the program</div>
-    <div class="cards">
-      <div class="card">
-        <div class="card-title">PowerPoint branding skill ready for beta</div>
-        <div class="card-body">A working session this week confirmed the skill produces ~97% correct output when run directly inside the PowerPoint add-in with the Forcepoint template loaded. The build is now ready for limited internal beta with a small creative team.</div>
-        <div class="card-source">Source: Branded Presentation Cohort Project</div>
+    <div class="cg">
+      <div class="sk-card">
+        <div class="sk-name">PowerPoint branding skill ready for beta</div>
+        <div class="sk-det">A working session this week confirmed the skill produces ~97% correct output when run directly inside the PowerPoint add-in with the Forcepoint template loaded. The build is now ready for limited internal beta with a small creative team.</div>
+        <div class="sk-src">Source: Branded Presentation Cohort Project</div>
       </div>
-      <div class="card">
-        <div class="card-title">Visual ground truth, not just rules</div>
-        <div class="card-body">Skill v0.3.0 was packaged with five reference slide images injected into every session — the skill compares its output against the canonical Forcepoint template, not just rules described in text. An 8-slide branded deck was generated end-to-end as proof.</div>
-        <div class="card-source">Source: Branded Presentation Cohort Project</div>
+      <div class="sk-card">
+        <div class="sk-name">Visual ground truth, not just rules</div>
+        <div class="sk-det">Skill v0.3.0 was packaged with five reference slide images injected into every session — the skill compares its output against the canonical Forcepoint template, not just rules described in text. An 8-slide branded deck was generated end-to-end as proof.</div>
+        <div class="sk-src">Source: Branded Presentation Cohort Project</div>
       </div>
-      <div class="card">
-        <div class="card-title">Five projects on the fast track</div>
-        <div class="card-body">FOSS Reviewer, Product Maturity Assessment, Forcepoint TS Intelligence Console, DIANA, and Trinity Agent showed strong architectural coherence in Round 1 and are headed into per-system review and skill registration.</div>
-        <div class="card-source">Source: Hackathon Project</div>
+      <div class="sk-card">
+        <div class="sk-name">Five projects on the fast track</div>
+        <div class="sk-det">FOSS Reviewer, Product Maturity Assessment, Forcepoint TS Intelligence Console, DIANA, and Trinity Agent showed strong architectural coherence in Round 1 and are headed into per-system review and skill registration.</div>
+        <div class="sk-src">Source: Hackathon Project</div>
       </div>
     </div>
   </div>
 
   <div class="section">
     <div class="sec-label">In the broader world</div>
-    <div class="cards">
-      <!-- INDUSTRY NEWS — at run time the generator searches Anthropic, Microsoft, Atlassian, Salesforce, and Databricks for items from the last 7 days, and inserts only those with a clear Forcepoint application. Placeholder retained pending live runtime search. -->
-      <div class="card">
-        <div class="card-title">[Industry news — placeholder]</div>
-        <div class="card-body">At run time, the generator pulls one or two items from the fixed source list (Anthropic, Microsoft, Atlassian, Salesforce, Databricks) and frames each with the specific way Forcepoint will evaluate or apply it. Not a roundup.</div>
-        <div class="card-source">Source: live at run time</div>
+    <!-- INDUSTRY NEWS — at run time the generator searches Anthropic, Microsoft, Atlassian, Salesforce, and Databricks for items from the last 7 days, and inserts only those with a clear Forcepoint application. Placeholder retained pending live runtime search. -->
+    <div class="cg">
+      <div class="sk-card">
+        <div class="sk-name">[Industry news — placeholder]</div>
+        <div class="sk-det">At run time, the generator pulls one or two items from the fixed source list (Anthropic, Microsoft, Atlassian, Salesforce, Databricks) and frames each with the specific way Forcepoint will evaluate or apply it. Not a roundup.</div>
+        <div class="sk-src">Source: live at run time</div>
       </div>
     </div>
   </div>
@@ -114,43 +122,18 @@
 
   <div class="section">
     <div class="sec-label">Coming up</div>
-    <div class="up-item">
-      <span class="up-badge">Hackathon</span>
-      <div>
-        <div class="up-text">Round 2 begins as teams enter the refinement phase; architecture review gates scheduled for TS Intelligence Console, DIANA, and Product Maturity Assessment.</div>
-        <div class="up-src">Source: Hackathon Project</div>
-      </div>
-    </div>
-    <div class="up-item">
-      <span class="up-badge">Branding skill</span>
-      <div>
-        <div class="up-text">The PowerPoint branding skill ships to the creative beta group by June 12, with a live walkthrough session targeted for the week of June 16.</div>
-        <div class="up-src">Source: Branded Presentation Cohort Project</div>
-      </div>
-    </div>
-    <div class="up-item">
-      <span class="up-badge">Skills</span>
-      <div>
-        <div class="up-text">FOSS Reviewer and Product Maturity Assessment are targeted for skill registration and pilot launch as the first of the fast-track five to publish.</div>
-        <div class="up-src">Source: Hackathon Project</div>
-      </div>
-    </div>
-    <div class="up-item">
-      <span class="up-badge">FIP</span>
-      <div>
-        <div class="up-text">We are identifying the IT and Microsoft contact path needed for enterprise-wide PowerPoint add-in deployment — a precondition for any branded-skill rollout.</div>
-        <div class="up-src">Source: Jira · EAI Portal workstream</div>
-      </div>
-    </div>
+    <div class="up-item"><span class="up-badge">Hackathon</span><div><div class="up-text">Round 2 begins as teams enter the refinement phase; architecture review gates scheduled for TS Intelligence Console, DIANA, and Product Maturity Assessment.</div><div class="up-src">Source: Hackathon Project</div></div></div>
+    <div class="up-item"><span class="up-badge">Branding skill</span><div><div class="up-text">The PowerPoint branding skill ships to the creative beta group by June 12, with a live walkthrough session targeted for the week of June 16.</div><div class="up-src">Source: Branded Presentation Cohort Project</div></div></div>
+    <div class="up-item"><span class="up-badge">Skills</span><div><div class="up-text">FOSS Reviewer and Product Maturity Assessment are targeted for skill registration and pilot launch as the first of the fast-track five to publish.</div><div class="up-src">Source: Hackathon Project</div></div></div>
+    <div class="up-item"><span class="up-badge">FIP</span><div><div class="up-text">We are identifying the IT and Microsoft contact path needed for enterprise-wide PowerPoint add-in deployment — a precondition for any branded-skill rollout.</div><div class="up-src">Source: Jira · EAI Portal workstream</div></div></div>
   </div>
 
   <div class="feedback">
     Tell us what you think. Reply to this issue in FIP — your feedback routes to the Enterprise AI team and the AI Ambassador network. Every issue is shaped by what readers tell us.
   </div>
 
-  <div class="nl-footer">The Signal · Enterprise AI · A Forcepoint Broadcast</div>
-  <div class="footer-text">Issue #5 · Week ending June 14, 2026 · Published by the Enterprise AI team</div>
-
+  <div class="nl-footer"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDI4MCIgd2lkdGg9IjEyMDAiIGhlaWdodD0iMjgwIj4KCiAgPHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iMjgwIiBmaWxsPSIjZmZmZmZmIj48L3JlY3Q+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjAgNzApIj48cmVjdCB4PSIwLjAwIiB5PSI2MS40NiIgd2lkdGg9IjYiIGhlaWdodD0iMTcuMDgiIHJ4PSIyLjUiIGZpbGw9IiNhMzAwODAiIG9wYWNpdHk9IjAuNjg4Ij48L3JlY3Q+PHJlY3QgeD0iMTQuMDAiIHk9IjYwLjU5IiB3aWR0aD0iNiIgaGVpZ2h0PSIxOC44MiIgcng9IjIuNSIgZmlsbD0iI2FkYjBiMyIgb3BhY2l0eT0iMC44MzciPjwvcmVjdD48cmVjdCB4PSIyOC4wMCIgeT0iNTIuNDciIHdpZHRoPSI2IiBoZWlnaHQ9IjM1LjA1IiByeD0iMi41IiBmaWxsPSIjYWRiMGIzIiBvcGFjaXR5PSIwLjk2MiI+PC9yZWN0PjxyZWN0IHg9IjQyLjAwIiB5PSI2NC40NyIgd2lkdGg9IjYiIGhlaWdodD0iMTEuMDYiIHJ4PSIyLjUiIGZpbGw9IiNhMzAwODAiIG9wYWNpdHk9IjAuODk2Ij48L3JlY3Q+PHJlY3QgeD0iNTYuMDAiIHk9IjU2LjE4IiB3aWR0aD0iNiIgaGVpZ2h0PSIyNy42NCIgcng9IjIuNSIgZmlsbD0iI2FkYjBiMyIgb3BhY2l0eT0iMC43ODYiPjwvcmVjdD48cmVjdCB4PSI3MC4wMCIgeT0iNjYuMDAiIHdpZHRoPSI2IiBoZWlnaHQ9IjguMDAiIHJ4PSIyLjUiIGZpbGw9IiNhMzAwODAiIG9wYWNpdHk9IjAuNzE1Ij48L3JlY3Q+PHJlY3QgeD0iODQuMDAiIHk9IjYyLjE2IiB3aWR0aD0iNiIgaGVpZ2h0PSIxNS42NyIgcng9IjIuNSIgZmlsbD0iI2EzMDA4MCIgb3BhY2l0eT0iMC43MDEiPjwvcmVjdD48cmVjdCB4PSI5OC4wMCIgeT0iNTkuOTIiIHdpZHRoPSI2IiBoZWlnaHQ9IjIwLjE3IiByeD0iMi41IiBmaWxsPSIjMDBhZjlhIiBvcGFjaXR5PSIxIj48L3JlY3Q+PHJlY3QgeD0iMTEyLjAwIiB5PSI0OS41MyIgd2lkdGg9IjYiIGhlaWdodD0iNDAuOTUiIHJ4PSIyLjUiIGZpbGw9IiMwMGFmOWEiIG9wYWNpdHk9IjEiPjwvcmVjdD48cmVjdCB4PSIxMjYuMDAiIHk9IjQzLjU0IiB3aWR0aD0iNiIgaGVpZ2h0PSI1Mi45MiIgcng9IjIuNSIgZmlsbD0iIzAwYWY5YSIgb3BhY2l0eT0iMSI+PC9yZWN0PjxyZWN0IHg9IjE0MC4wMCIgeT0iNDQuNDciIHdpZHRoPSI2IiBoZWlnaHQ9IjUxLjA1IiByeD0iMi41IiBmaWxsPSIjMDBhZjlhIiBvcGFjaXR5PSIxIj48L3JlY3Q+PHJlY3QgeD0iMTU0LjAwIiB5PSI1MS43MSIgd2lkdGg9IjYiIGhlaWdodD0iMzYuNTciIHJ4PSIyLjUiIGZpbGw9IiMwMGFmOWEiIG9wYWNpdHk9IjEiPjwvcmVjdD48cmVjdCB4PSIxNjguMDAiIHk9IjYwLjQ3IiB3aWR0aD0iNiIgaGVpZ2h0PSIxOS4wNyIgcng9IjIuNSIgZmlsbD0iIzAwYWY5YSIgb3BhY2l0eT0iMSI+PC9yZWN0PjxyZWN0IHg9IjE4Mi4wMCIgeT0iNjQuOTQiIHdpZHRoPSI2IiBoZWlnaHQ9IjEwLjEyIiByeD0iMi41IiBmaWxsPSIjMDBhZjlhIiBvcGFjaXR5PSIxIj48L3JlY3Q+PHJlY3QgeD0iMTk2LjAwIiB5PSI2Mi4xNyIgd2lkdGg9IjYiIGhlaWdodD0iMTUuNjUiIHJ4PSIyLjUiIGZpbGw9IiMwMGFmOWEiIG9wYWNpdHk9IjEiPjwvcmVjdD48cmVjdCB4PSIyMTAuMDAiIHk9IjU0LjAwIiB3aWR0aD0iNiIgaGVpZ2h0PSIzMi4wMCIgcng9IjIuNSIgZmlsbD0iIzAwYWY5YSIgb3BhY2l0eT0iMSI+PC9yZWN0PjwvZz4KICA8dGV4dCB4PSIzNDAiIHk9IjE2MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iMTIwIiBsZXR0ZXItc3BhY2luZz0iLTQiIGZpbGw9IiMwMDM2NTQiPlNJR05BTDwvdGV4dD4KICA8bGluZSB4MT0iMzQwIiB5MT0iMjAwIiB4Mj0iNDAwIiB5Mj0iMjAwIiBzdHJva2U9IiMwMGFmOWEiIHN0cm9rZS13aWR0aD0iMyI+PC9saW5lPgogIDx0ZXh0IHg9IjQxNiIgeT0iMjA4IiBmb250LWZhbWlseT0iQXJpYWwsIEhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCIgZm9udC1zaXplPSIyMiIgbGV0dGVyLXNwYWNpbmc9IjUiIGZpbGw9IiMwMDc1NjUiPkVOVEVSUFJJU0UgQUkgV0VFS0xZIMK3IEEgRk9SQ0VQT0lOVCBCUk9BRENBU1Q8L3RleHQ+Cjwvc3ZnPg==" alt="The Signal — Enterprise AI Weekly"></div>
+  <div class="footer-text">The Signal · Enterprise AI · A Forcepoint Broadcast · Issue #5 · Week ending June 14, 2026 · Published by the Enterprise AI team</div>
 </div>
 </body>
 </html>
