@@ -8,21 +8,6 @@ import {
 } from '../ui/icons.jsx'
 import './skills.css'
 
-// Defaults target Forcepoint's GitHub Enterprise (BTS/EAI-claude-skills).
-// Override host/owner/repo via VITE_GITHUB_* in .env.
-//
-// PAT handling — interim: all submissions commit through a single shared
-// token (VITE_GITHUB_HOPPER_TOKEN) provided at build time, so submitters
-// don't have to mint and paste their own. This is replaced when the
-// service-user account is provisioned. The token ships in the JS bundle,
-// so the portal must remain behind SSO + the internal VPN until then.
-const GITHUB_CONFIG = {
-  HOST:  import.meta.env.VITE_GITHUB_HOST  || 'https://github.cicd.cloud.fpdev.io',
-  API:   import.meta.env.VITE_GITHUB_API   || 'https://github.cicd.cloud.fpdev.io/api/v3',
-  OWNER: import.meta.env.VITE_GITHUB_OWNER || 'BTS',
-  REPO:  import.meta.env.VITE_GITHUB_REPO  || 'EAI-claude-skills',
-  HOPPER_TOKEN: import.meta.env.VITE_GITHUB_HOPPER_TOKEN || '',
-}
 
 const PIPELINE_STEPS = [
   { id: 0, Icon: ShieldIcon,    label: 'Security scan',         detail: 'Secrets, credentials, hard-coded PII, and API key detection.' },
@@ -30,7 +15,7 @@ const PIPELINE_STEPS = [
   { id: 2, Icon: LockIcon,      label: 'DLP review',            detail: 'No regulated data (PII, PHI, proprietary) embedded in skill content.' },
   { id: 3, Icon: DocCheckIcon,  label: 'Template compliance',   detail: 'manifest.json, README.md, and {skill-name}.md present and valid.' },
   { id: 4, Icon: WrenchIcon,    label: 'Engineering review',    detail: 'Skills Engineering — technical review, trust-tier assignment, pilot planning.' },
-  { id: 5, Icon: BranchIcon,    label: 'GitHub PR queue',       detail: 'Pull request opened in EAI-claude-skills for IT review and merge.' },
+  { id: 5, Icon: BranchIcon,    label: 'Triage submission',     detail: 'Skill package uploaded to triage queue for IT review.' },
 ]
 
 // ── PIPELINE STUBS — replace bodies with real service calls ──
@@ -47,106 +32,6 @@ async function checkDocQuality(inventory, skillName)  {
 
 const pause = ms => new Promise(r => setTimeout(r, ms))
 
-// ── GITHUB PUSH — uploads all three files from inventory ──
-// `extras` carries the optional submission enrichments — the FIP-style
-// tracking reference, trust tier, and use-case text — all of which surface
-// in the PR body so reviewers see the routing/context upfront.
-async function pushInventoryToGitHub(skillName, version, inventory, committer, intent, pat, extras = {}) {
-  const apiBase = `${GITHUB_CONFIG.API}/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}`
-  const branch  = `skill/${skillName}/v${version}`
-  const headers = {
-    'Authorization':        `Bearer ${pat}`,
-    'Accept':               'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-    'Content-Type':         'application/json',
-  }
-
-  const toBase64 = str => btoa(unescape(encodeURIComponent(str)))
-
-  try {
-    const refRes = await fetch(`${apiBase}/git/ref/heads/main`, { headers })
-    if (!refRes.ok) return { ok: false, error: `Could not read main branch (HTTP ${refRes.status})` }
-    const mainSha = (await refRes.json()).object.sha
-
-    const branchRes = await fetch(`${apiBase}/git/refs`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: mainSha }),
-    })
-    if (!branchRes.ok && branchRes.status !== 422) {
-      const bErr = await branchRes.json().catch(() => ({}))
-      return { ok: false, error: `Branch creation failed: ${bErr.message || `HTTP ${branchRes.status}`}` }
-    }
-
-    const files = [
-      { name: 'manifest.json',      content: inventory.manifest.content },
-      { name: 'README.md',          content: inventory.readme.content },
-      { name: `${skillName}.md`,    content: inventory.skillMd.content },
-    ]
-    for (const f of files) {
-      const path = `skills/${skillName}/v${version}/${f.name}`
-      const existing = await fetch(`${apiBase}/contents/${path}?ref=${branch}`, { headers })
-      const existingSha = existing.ok ? (await existing.json()).sha : undefined
-
-      const res = await fetch(`${apiBase}/contents/${path}`, {
-        method: 'PUT', headers,
-        body: JSON.stringify({
-          message: `feat: add ${skillName} v${version} — ${f.name}`,
-          content: toBase64(f.content),
-          branch,
-          ...(existingSha ? { sha: existingSha } : {}),
-        }),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        return { ok: false, error: `Upload failed for ${f.name}: ${err.message || `HTTP ${res.status}`}` }
-      }
-    }
-
-    const fipRef = extras.fipRef ? `**Tracking ref:** \`${extras.fipRef}\`\n` : ''
-    const tierLine = extras.tier ? `**Trust tier:** ${extras.tier}\n` : ''
-    const useCaseBlock = extras.useCase
-      ? `\n### Use case / business value\n${extras.useCase}\n`
-      : ''
-    const prBody =
-      `## Skill Submission: \`${skillName}\` v${version}\n\n` +
-      `**Submitter:** ${committer}\n` +
-      `${fipRef}${tierLine}` +
-      `\n### What does this skill do?\n${intent}\n` +
-      useCaseBlock +
-      `\n---\n_Submitted via the Forcepoint Intelligence Platform. Files at \`skills/${skillName}/v${version}/\`._`
-
-    const prRes = await fetch(`${apiBase}/pulls`, {
-      method: 'POST', headers,
-      body: JSON.stringify({
-        title: `Skill Submission: ${skillName} v${version}`,
-        body:  prBody,
-        head: branch, base: 'main',
-      }),
-    })
-
-    let pr
-    if (!prRes.ok) {
-      if (prRes.status === 422) {
-        const existing = await fetch(`${apiBase}/pulls?head=${GITHUB_CONFIG.OWNER}:${branch}&state=open`, { headers })
-        const list = existing.ok ? await existing.json() : []
-        if (list.length) { pr = list[0] }
-        else return { ok: false, error: `PR creation failed and no existing PR found for branch ${branch}.` }
-      } else {
-        const pErr = await prRes.json().catch(() => ({}))
-        return { ok: false, error: `PR creation failed: ${pErr.message || `HTTP ${prRes.status}`}` }
-      }
-    } else {
-      pr = await prRes.json()
-    }
-    await fetch(`${apiBase}/issues/${pr.number}/labels`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ labels: ['Skill-Submission'] }),
-    }).catch(() => {})
-    return { ok: true, prUrl: pr.html_url, prNumber: pr.number, branch }
-  } catch (e) {
-    return { ok: false, error: e.message || 'Network error' }
-  }
-}
 
 // ── MANIFEST MODAL ─────────────────────────────────────────
 // Inputs that already exist on the Step 1 form (owner email, baseline/skill
@@ -568,21 +453,10 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
   const submit = async () => {
     setInfoMsg(null)
     if (!validateForm()) return
-    if (!GITHUB_CONFIG.HOPPER_TOKEN) {
-      setValMsg('GitHub hopper token is not configured on this build. Set VITE_GITHUB_HOPPER_TOKEN in .env and rebuild.')
-      return
-    }
     setValMsg(null)
 
-    // Two refs: legacy SKL-* (kept for back-compat) and a FIP-* tracking
-    // ref that matches the format the low-friction /api/fip-intake endpoint
-    // emits, so submitters across both paths quote the same identifier shape.
-    const ref     = 'SKL-' + Date.now().toString(36).toUpperCase().slice(-6)
-    const fipRef = 'FIP-' + Date.now().toString(36).toUpperCase() +
-                    '-' + Math.random().toString(36).slice(2, 6).toUpperCase()
     const sName = skillName.trim()
     const sVer  = version.trim()
-    setRefNum(ref)
     setSubmitted(true)
     setSubmitDisabled(true)
     setValMsg(null)
@@ -613,22 +487,47 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
 
     setStep(4, 'running', 'assigned')
     setStep(5, 'running', 'uploading…')
-    const committer = `${name} (${dept}) <${email}>`
-    const result    = await pushInventoryToGitHub(sName, sVer, inventory, committer, intent.trim(), GITHUB_CONFIG.HOPPER_TOKEN,
-      { fipRef, tier: tier || null, useCase: useCase.trim() || null })
+
+    let result
+    try {
+      const zip = new JSZip()
+      zip.file('manifest.json',     inventory.manifest.content)
+      zip.file('README.md',         inventory.readme.content)
+      zip.file(`${sName}.md`,       inventory.skillMd.content)
+      const zipBase64 = await zip.generateAsync({ type: 'base64' })
+
+      const res = await fetch('/api/fip-intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:        sName,
+          zipBase64,
+          zipFilename: `${sName}-v${sVer}.zip`,
+          description: intent.trim(),
+          tier:        tier || null,
+          useCase:     useCase.trim() || null,
+          owner:       email,
+        }),
+      })
+      result = await res.json()
+      if (!res.ok) result = { ok: false, error: result.error || `HTTP ${res.status}` }
+    } catch (e) {
+      result = { ok: false, error: e.message || 'Network error' }
+    }
 
     if (!result.ok) {
       setSubmitted(false)
       setSubmitDisabled(false)
       setPipeSteps(PIPELINE_STEPS.map(() => ({ state: 'queued', label: 'queued' })))
       setPipeNotes([])
-      setValMsg(`GitHub upload failed: ${result.error}`)
+      setValMsg(`Triage upload failed: ${result.error}`)
       return
     }
 
+    setRefNum(result.ref)
     setStep(4, 'pass', 'assigned')
-    setStep(5, 'pass', `PR #${result.prNumber}`)
-    setPrResult({ ...result, ref, fipRef, tier, useCase, name, dept, sName, sVer })
+    setStep(5, 'pass', result.ref)
+    setPrResult({ ...result, tier, useCase, name, dept, sName, sVer })
     setSubmitDisabled(false)
   }
 
@@ -862,7 +761,7 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
                   Files are committed to <code className="ss-code">skills/{sName || '{name}'}/v{version}/</code>{' '}
                   on branch <code className="ss-code">skill/{sName || '{name}'}/v{version}</code>.
                   Reviewed within 3 business days. See{' '}
-                  <a href={`${GITHUB_CONFIG.HOST}/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer">
+                  <a href="https://github.cicd.cloud.fpdev.io/BTS/EAI-claude-skills/blob/main/CONTRIBUTING.md" target="_blank" rel="noreferrer">
                     CONTRIBUTING.md
                   </a>.
                 </span>
@@ -958,28 +857,23 @@ export default function SkillSubmit({ open, onOpenChange, prefill, onPrefillCons
                     <div className="ss-success-card">
                       <div className="ss-success-head">
                         <CheckIcon size={14} />
-                        All checks passed — pull request opened
+                        All checks passed — skill submitted to triage
                       </div>
-                      <a className="ss-success-link" href={prResult.prUrl} target="_blank" rel="noreferrer">
+                      <a className="ss-success-link" href={prResult.commitUrl} target="_blank" rel="noreferrer">
                         <GithubIcon size={14} />
-                        {prResult.prUrl}
+                        {prResult.commitUrl}
                       </a>
 
-                      {/* FIP tracking ref — human-readable handle
-                          submitters can quote when chasing status, matching
-                          the shape emitted by /api/fip-intake. */}
-                      {prResult.fipRef && (
+                      {prResult.ref && (
                         <div className="ss-success-ref">
-                          <span className="ss-success-ref-label">Tracking reference</span>
-                          <code className="ss-success-ref-value">{prResult.fipRef}</code>
+                          <span className="ss-success-ref-label">Triage reference</span>
+                          <code className="ss-success-ref-value">{prResult.ref}</code>
                         </div>
                       )}
 
                       <div className="ss-success-meta">
-                        Branch <code className="ss-code">skill/{prResult.sName}/v{prResult.sVer}</code> →{' '}
-                        <code className="ss-code">main</code>
-                        {prResult.tier ? <>{' · '}Tier <strong>{prResult.tier}</strong></> : null}
-                        {' · '}PR Reference <strong>{prResult.ref}</strong>
+                        {prResult.tier ? <>Tier <strong>{prResult.tier}</strong>{' · '}</> : null}
+                        Triage Reference <strong>{prResult.ref}</strong>
                         {' · '}<a href="https://forcepoint.atlassian.net/jira/software/c/projects/AI/boards/4837" target="_blank" rel="noreferrer">Track in AI Jira board</a>
                       </div>
                     </div>
