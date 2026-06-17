@@ -2,11 +2,12 @@
  * FIP portal API server — mounts the Okta SAML routes, express-session,
  * and the application endpoints (/api/ask, /api/fip-intake, /api/health).
  *
- * Target deployment: Forcepoint internal Linux box at 10.23.80.28, fronted
+ * Target deployment: Forcepoint internal Linux box at 10.23.14.20, fronted
  * by nginx. For local dev, omit the SAML env vars and the server enables
  * /auth/dev-login as the sign-in path — see auth/okta.cjs.
  */
 
+require('dotenv').config();
 const express = require("express");
 const session = require("express-session");
 const path    = require("path");
